@@ -25,7 +25,7 @@ cd examples/order-fulfilment
 node ../../packages/cli/dist/index.js compile
 ```
 
-(Alternatively add `dfsm-cli` as a devDependency and use `pnpm exec dfsm` once wired to your workspace.)
+(Alternatively add `@eklabdev/dfsm-cli` as a devDependency and use `pnpm exec dfsm` once wired to your workspace.)
 
 ## Start MongoDB
 

@@ -58,15 +58,15 @@ importers:
       '@eklabdev/dfsm':
         specifier: workspace:*
         version: link:../core
+      '@eklabdev/dfsm-viz':
+        specifier: workspace:*
+        version: link:../viz
       chalk:
         specifier: ^5.0.0
         version: 5.6.2
       commander:
         specifier: ^12.0.0
         version: 12.1.0
-      dfsm-viz:
-        specifier: workspace:*
-        version: link:../viz
       mongodb:
         specifier: ^6.0.0
         version: 6.21.0(socks@2.8.7)

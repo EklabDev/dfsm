@@ -1,8 +1,14 @@
 {
-  "name": "dfsm-cli",
+  "name": "@eklabdev/dfsm-cli",
   "version": "0.1.0",
   "description": "CLI for @eklabdev/dfsm: lint, compile, migrate, viz",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "dfsm": "dist/index.js"
   },
@@ -17,7 +23,7 @@
   "dependencies": {
     "@eklabdev/dfsm": "workspace:*",
     "commander": "^12.0.0",
-    "dfsm-viz": "workspace:*",
+    "@eklabdev/dfsm-viz": "workspace:*",
     "mongodb": "^6.0.0",
     "tsx": "^4.0.0",
     "chalk": "^5.0.0",

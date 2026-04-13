@@ -18,7 +18,7 @@ Teams need durable, MongoDB-backed finite state machines where the **machine def
 - `compiler`: Graph lint, `compile` → `TransitionTable` / `CompiledMachine`, `VizGraph`, `generateInterface` output for `generated/I*Actions.ts` / `I*Guards.ts`.
 - `mongodb-persistence`: Collections (`workflow_state`, `action_outbox`, `machine_registry`), indexes, leases, transactional `transitionWithOutbox`, outbox lifecycle APIs, machine version persistence.
 - `workflow-runtime`: `WorkflowEngine` (`startWorkflow`, `sendEvent`), guard/action handler registration, outbox relay merging context, TTL supervisor, version-pinned transitions for in-flight workflows.
-- `dfsm-cli`: Commander-based commands, `.dfsm` compile artifacts, migrate gates and rollback rules, viz port defaults.
+- `@eklabdev/dfsm-cli`: Commander-based commands, `.dfsm` compile artifacts, migrate gates and rollback rules, viz port defaults.
 - `statechart-visualization`: HTTP APIs and SPA behaviour for graph, live aggregates, workflow detail, and history diff.
 - `developer-experience`: Examples, documentation set, workspace scripts, and CI pipeline aligned with integration/unit test expectations.
 

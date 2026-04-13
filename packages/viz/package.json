@@ -1,8 +1,14 @@
 {
-  "name": "dfsm-viz",
+  "name": "@eklabdev/dfsm-viz",
   "version": "0.1.0",
   "description": "Statechart visualisation server and React UI for @eklabdev/dfsm",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc && vite build",

@@ -10,7 +10,9 @@
     "test:integration": "turbo run test:integration",
     "lint": "turbo run lint",
     "docs:api": "typedoc --entryPoints packages/core/src/index.ts --out docs/api",
-    "publish:npm": "pnpm --filter @eklabdev/dfsm run build && pnpm --filter @eklabdev/dfsm publish --access public"
+    "publish:npm": "pnpm --filter @eklabdev/dfsm run build && pnpm --filter @eklabdev/dfsm publish --access public",
+    "publish:npm:viz": "pnpm --filter @eklabdev/dfsm-viz run build && pnpm --filter @eklabdev/dfsm-viz publish --access public",
+    "publish:npm:cli": "pnpm --filter @eklabdev/dfsm-cli run build && pnpm --filter @eklabdev/dfsm-cli publish --access public"
   },
   "devDependencies": {
     "turbo": "^2.0.0",

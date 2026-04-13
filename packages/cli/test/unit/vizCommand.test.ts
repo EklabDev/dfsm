@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const startServer = vi.fn().mockResolvedValue(undefined)
 
-vi.mock('dfsm-viz', () => ({
+vi.mock('@eklabdev/dfsm-viz', () => ({
   startServer,
 }))
 
@@ -11,7 +11,7 @@ describe('vizCommand', () => {
     startServer.mockClear()
   })
 
-  it('delegates to dfsm-viz startServer with the given port', async () => {
+  it('delegates to @eklabdev/dfsm-viz startServer with the given port', async () => {
     const { vizCommand } = await import('../../src/commands/viz.js')
     const log = vi.spyOn(console, 'log').mockImplementation(() => {})
 

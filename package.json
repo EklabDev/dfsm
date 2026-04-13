@@ -1,0 +1,24 @@
+{
+  "name": "dfsm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Durable finite state machines with MongoDB-native persistence and compile-time type safety",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
+    "lint": "turbo run lint",
+    "docs:api": "typedoc --entryPoints packages/core/src/index.ts --out docs/api",
+    "publish:npm": "pnpm --filter @eklabdev/dfsm run build && pnpm --filter @eklabdev/dfsm publish --access public"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typedoc": "^0.26.0",
+    "typescript": "^5.4.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

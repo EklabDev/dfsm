@@ -1,0 +1,17 @@
+{
+  "name": "traffic-light-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "example": "tsx run.ts"
+  },
+  "dependencies": {
+    "@eklabdev/dfsm": "workspace:*",
+    "mongodb": "^6.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  }
+}

@@ -1,0 +1,3 @@
+[submodule "agentSkills"]
+	path = agentSkills
+	url = https://github.com/EklabDev/agentSkills.git

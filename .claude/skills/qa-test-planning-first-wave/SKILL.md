@@ -1,0 +1,24 @@
+---
+name: qa-test-planning-first-wave
+description: Plan and verify tests for TypeScript+React, TypeScript+Node, Java+Spring Boot, Python+FastAPI.
+license: MIT
+compatibility: Claude Code skills; Vipecoding submodule pack.
+metadata:
+  skillId: qa-test-planning-first-wave
+  version: "1.0"
+---
+
+# QA test planning (first-wave stacks)
+
+## When to use
+Feature or bugfix needs test strategy.
+
+## MUST
+- Name environments (dev/UAT/prod) for any data or deployment steps.
+- Choose pyramid-appropriate tests (unit, integration, e2e) for the stack.
+- For TS+React: component and hook tests; a11y spot-checks where relevant.
+- For TS+Node / Java Spring / FastAPI: API contract tests and failure modes.
+
+## Verification
+- [ ] Test cases trace to acceptance criteria
+- [ ] Flake-prone areas called out

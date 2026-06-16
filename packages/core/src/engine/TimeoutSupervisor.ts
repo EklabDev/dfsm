@@ -1,13 +1,15 @@
-import type { IStateStore } from '../store/IStateStore.js'
-import type { TransitionTable } from '../types/engine.js'
+import type { IWorkflowStore } from '../store/IWorkflowStore.js'
+import type { MachineRegistry } from '../runtime/MachineRegistry.js'
 
 export interface TimeoutSupervisorConfig {
-  store: IStateStore
+  store: IWorkflowStore
   scanIntervalMs: number
-  machines: Map<string, { transitionTable: TransitionTable; terminal: string[] }>
+  registry: MachineRegistry
   sendEvent: (
     workflowId: string,
     event: { type: string; payload?: unknown },
+    machineId: string,
+    machineVersion: number,
   ) => Promise<void>
 }
 
@@ -32,11 +34,11 @@ export class TimeoutSupervisor {
   }
 
   async scan(): Promise<void> {
-    for (const [machineId, machine] of this.config.machines) {
-      const workflows = await this.config.store.getActiveWorkflows(machineId)
+    for (const [machineId, registered] of this.getAllMachines()) {
+      const workflows = await this.config.store.getActiveWorkflowInstances(machineId)
 
       for (const doc of workflows) {
-        const stateMap = machine.transitionTable.get(doc.currentState)
+        const stateMap = registered.transitionTable.get(doc.currentState)
         if (!stateMap) continue
 
         for (const [eventKey] of stateMap) {
@@ -44,11 +46,16 @@ export class TimeoutSupervisor {
           if (!match) continue
 
           const ttlMs = Number(match[1])
-          const elapsed = Date.now() - doc.updatedAt.getTime()
+          const elapsed = Date.now() - new Date(doc.updatedAt).getTime()
 
           if (elapsed >= ttlMs) {
             try {
-              await this.config.sendEvent(doc._id, { type: eventKey })
+              await this.config.sendEvent(
+                doc.id,
+                { type: eventKey },
+                doc.machineId,
+                doc.machineVersion,
+              )
             } catch {
               // Guard rejection or concurrent modification — skip
             }
@@ -56,5 +63,9 @@ export class TimeoutSupervisor {
         }
       }
     }
+  }
+
+  private getAllMachines(): Array<[string, import('../runtime/MachineRegistry.js').RegisteredMachine]> {
+    return this.config.registry.getAll().map((m) => [m.definition.machineId, m])
   }
 }

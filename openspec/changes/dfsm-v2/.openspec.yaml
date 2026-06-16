@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-06-15
+description: DFSM v2 — runtime registration, provider-agnostic store, queue-driven execution

@@ -1,5 +1,3 @@
-import type { ActionSlot, GuardSlot } from './machine.js'
-
 export interface VizNode {
   id: string
   label: string
@@ -31,12 +29,3 @@ export interface TransitionTableEntry {
 }
 
 export type TransitionTable = Map<string, Map<string, TransitionTableEntry>>
-
-export interface CompiledMachine {
-  machineId: string
-  version: number
-  transitionTable: TransitionTable
-  vizGraph: VizGraph
-  allActionSlots: ActionSlot<any, any>[]
-  allGuardSlots: GuardSlot<any>[]
-}

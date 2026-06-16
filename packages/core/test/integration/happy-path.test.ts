@@ -6,7 +6,7 @@ describe('happy-path integration', () => {
 
   beforeAll(async () => {
     ctx = await setupTestEnv()
-    await ctx.engine.start()
+    await ctx.runtime.start()
   })
 
   afterAll(async () => {
@@ -15,7 +15,7 @@ describe('happy-path integration', () => {
 
   it('processes an order through SUBMIT → PAYMENT_CAPTURED → SHIPPED → DELIVERED', async () => {
     const workflowId = 'ORD-1'
-    await ctx.engine.startWorkflow({
+    await ctx.runtime.startWorkflow({
       workflowId,
       machineId: 'order',
       initialContext: {
@@ -26,24 +26,24 @@ describe('happy-path integration', () => {
       },
     })
 
-    await ctx.engine.sendEvent(workflowId, { type: 'SUBMIT' })
+    await ctx.runtime.sendEvent(workflowId, { type: 'SUBMIT' })
     await sleep(500)
 
-    await ctx.engine.sendEvent(workflowId, { type: 'PAYMENT_CAPTURED' })
+    await ctx.runtime.sendEvent(workflowId, { type: 'PAYMENT_CAPTURED' })
     await sleep(500)
 
-    await ctx.engine.sendEvent(workflowId, { type: 'SHIPPED' })
+    await ctx.runtime.sendEvent(workflowId, { type: 'SHIPPED' })
     await sleep(500)
 
-    await ctx.engine.sendEvent(workflowId, { type: 'DELIVERED' })
+    await ctx.runtime.sendEvent(workflowId, { type: 'DELIVERED' })
     await sleep(500)
 
-    const doc = await ctx.engine.getWorkflow(workflowId)
+    const doc = await ctx.runtime.getWorkflow(workflowId)
     expect(doc).not.toBeNull()
     expect(doc!.currentState).toBe('delivered')
     expect(doc!.status).toBe('completed')
 
-    const history = await ctx.engine.getHistory(workflowId)
+    const history = await ctx.runtime.getHistory(workflowId)
     expect(history).toHaveLength(4)
 
     const transitions = history.map((h) => [h.fromState, h.toState])
@@ -59,11 +59,7 @@ describe('happy-path integration', () => {
     expect(doc!.context.trackingNumber).toBeDefined()
     expect(doc!.context.orderId).toBe('ORD-1')
 
-    const outboxDocs = await ctx.db
-      .collection('action_outbox')
-      .find({ workflowId })
-      .toArray()
-    const allDone = outboxDocs.every((d: any) => d.status === 'done')
-    expect(allDone).toBe(true)
+    const pending = await ctx.store.claimPendingActions(100)
+    expect(pending.filter((p) => p.workflowId === workflowId)).toHaveLength(0)
   })
 })

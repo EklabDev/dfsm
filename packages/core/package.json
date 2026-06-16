@@ -1,7 +1,7 @@
 {
   "name": "@eklabdev/dfsm",
-  "version": "0.1.0",
-  "description": "Core durable finite state machine library",
+  "version": "0.2.0",
+  "description": "Durable finite state machines with provider-agnostic persistence and queue-driven execution",
   "publishConfig": {
     "access": "public"
   },
@@ -22,11 +22,19 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "amqplib": "^0.10.4",
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.21.0",
+    "kafkajs": "^2.2.4",
     "mongodb": "^6.0.0",
-    "zod": "^3.22.0",
-    "zod-to-ts": "^1.2.0"
+    "pg": "^8.13.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.5",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/express": "^4.17.21",
+    "@types/pg": "^8.11.10",
     "mongodb-memory-server": "^9.0.0",
     "vitest": "^2.0.0",
     "typescript": "^5.4.0"

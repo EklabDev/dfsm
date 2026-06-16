@@ -1,3 +1,6 @@
 export * from './machine.js'
+export * from './workflow.js'
+export * from './store.js'
+export * from './envelope.js'
 export * from './context.js'
 export * from './engine.js'

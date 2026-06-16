@@ -1,29 +1,20 @@
-import type { IStateStore } from '../store/IStateStore.js'
+import type { IWorkflowStore } from '../store/IWorkflowStore.js'
 
 export class ConcurrencyManager {
   constructor(
-    private store: IStateStore,
-    private leaseTtlMs = 30_000,
+    private store: IWorkflowStore,
+    private leaseTtlMs: number,
   ) {}
 
-  async acquire(workflowId: string): Promise<boolean> {
-    return this.store.acquireLease(workflowId, this.leaseTtlMs)
-  }
-
-  async release(workflowId: string): Promise<void> {
-    return this.store.releaseLease(workflowId)
-  }
-
-  async withLease<T>(
-    workflowId: string,
-    fn: () => Promise<T>,
-  ): Promise<T | null> {
-    const acquired = await this.acquire(workflowId)
-    if (!acquired) return null
+  async withLease<T>(workflowId: string, fn: () => Promise<T>): Promise<T> {
+    const acquired = await this.store.acquireLease(workflowId, this.leaseTtlMs)
+    if (!acquired) {
+      throw new Error(`Could not acquire lease for workflow '${workflowId}'`)
+    }
     try {
       return await fn()
     } finally {
-      await this.release(workflowId)
+      await this.store.releaseLease(workflowId)
     }
   }
 }

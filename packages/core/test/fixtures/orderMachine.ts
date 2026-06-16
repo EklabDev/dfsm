@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { defineMachine } from '../../src/define/defineMachine.js'
+import { createMachine } from '../../src/machine/createMachine.js'
 
-export interface OrderContext {
+export interface OrderContext extends Record<string, unknown> {
   orderId: string
   customerId: string
   amount: number
@@ -13,42 +13,49 @@ export interface OrderContext {
   refundId?: string
 }
 
-export const orderMachine = defineMachine<OrderContext>({
+export const orderMachine = createMachine({
   id: 'order',
   initial: 'pending',
-  terminal: ['delivered', 'cancelled', 'refunded'],
-  context: {
-    orderId: '',
-    customerId: '',
-    amount: 0,
-    sku: '',
+  context: { orderId: '', customerId: '', amount: 0, sku: '' },
+  types: {} as {
+    context: OrderContext
+    events:
+      | { type: 'SUBMIT' }
+      | { type: 'PAYMENT_CAPTURED' }
+      | { type: 'CANCEL' }
   },
   states: {
     pending: {
       on: {
         SUBMIT: {
           target: 'payment_processing',
-          guard: {
-            name: 'hasStock',
-            input: z.object({ sku: z.string() }),
-          },
-          actions: [
-            {
-              name: 'chargePayment',
-              input: z.object({ amount: z.number(), customerId: z.string() }),
-              output: z.object({ chargeId: z.string() }),
+          guard: 'hasStock',
+          actions: ['chargePayment'],
+          meta: {
+            dfsm: {
+              guard: { hasStock: { input: z.object({ sku: z.string() }) } },
+              actions: {
+                chargePayment: {
+                  input: z.object({ amount: z.number(), customerId: z.string() }),
+                  output: z.object({ chargeId: z.string() }),
+                },
+              },
             },
-          ],
+          },
         },
         CANCEL: {
           target: 'cancelled',
-          actions: [
-            {
-              name: 'recordCancellation',
-              input: z.object({ orderId: z.string() }),
-              output: z.object({ cancelReason: z.string() }),
+          actions: ['recordCancellation'],
+          meta: {
+            dfsm: {
+              actions: {
+                recordCancellation: {
+                  input: z.object({ orderId: z.string() }),
+                  output: z.object({ cancelReason: z.string() }),
+                },
+              },
             },
-          ],
+          },
         },
       },
     },
@@ -57,15 +64,19 @@ export const orderMachine = defineMachine<OrderContext>({
       on: {
         PAYMENT_CAPTURED: {
           target: 'fulfilling',
-          actions: [
-            {
-              name: 'reserveStock',
-              input: z.object({ sku: z.string() }),
-              output: z.object({ reservationId: z.string() }),
+          actions: ['reserveStock'],
+          meta: {
+            dfsm: {
+              actions: {
+                reserveStock: {
+                  input: z.object({ sku: z.string() }),
+                  output: z.object({ reservationId: z.string() }),
+                },
+              },
             },
-          ],
+          },
         },
-        PAYMENT_FAILED: { target: 'cancelled', actions: [] },
+        PAYMENT_FAILED: { target: 'cancelled' },
       },
     },
     fulfilling: {
@@ -73,38 +84,43 @@ export const orderMachine = defineMachine<OrderContext>({
       on: {
         SHIPPED: {
           target: 'shipped',
-          actions: [
-            {
-              name: 'sendShippingNotification',
-              input: z.object({
-                customerId: z.string(),
-                orderId: z.string(),
-              }),
-              output: z.object({ trackingNumber: z.string() }),
+          actions: ['sendShippingNotification'],
+          meta: {
+            dfsm: {
+              actions: {
+                sendShippingNotification: {
+                  input: z.object({ customerId: z.string(), orderId: z.string() }),
+                  output: z.object({ trackingNumber: z.string() }),
+                },
+              },
             },
-          ],
+          },
         },
-        CANCEL: { target: 'cancelled', actions: [] },
+        CANCEL: { target: 'cancelled' },
       },
     },
     shipped: {
       after: { 604800000: 'delivered' },
       on: {
-        DELIVERED: { target: 'delivered', actions: [] },
+        DELIVERED: { target: 'delivered' },
         RETURN_REQUESTED: {
           target: 'refunded',
-          actions: [
-            {
-              name: 'processRefund',
-              input: z.object({ chargeId: z.string() }),
-              output: z.object({ refundId: z.string() }),
+          actions: ['processRefund'],
+          meta: {
+            dfsm: {
+              actions: {
+                processRefund: {
+                  input: z.object({ chargeId: z.string() }),
+                  output: z.object({ refundId: z.string() }),
+                },
+              },
             },
-          ],
+          },
         },
       },
     },
-    delivered: {},
-    cancelled: {},
-    refunded: {},
+    delivered: { type: 'final' },
+    cancelled: { type: 'final' },
+    refunded: { type: 'final' },
   },
 })

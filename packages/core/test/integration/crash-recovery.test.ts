@@ -5,8 +5,8 @@ describe('crash-recovery integration', () => {
   let ctx: TestContext
 
   beforeAll(async () => {
-    ctx = await setupTestEnv({ leaseTtlMs: 500 })
-    await ctx.engine.start()
+    ctx = await setupTestEnv('sqlite', { leaseTtlMs: 500 })
+    await ctx.runtime.start()
   })
 
   afterAll(async () => {
@@ -15,7 +15,7 @@ describe('crash-recovery integration', () => {
 
   it('recovers when lease expires and second engine takes over', async () => {
     const workflowId = 'ORD-CRASH-1'
-    await ctx.engine.startWorkflow({
+    await ctx.runtime.startWorkflow({
       workflowId,
       machineId: 'order',
       initialContext: {
@@ -26,25 +26,23 @@ describe('crash-recovery integration', () => {
       },
     })
 
-    await ctx.engine.sendEvent(workflowId, { type: 'SUBMIT' })
-    await sleep(300)
+    await ctx.runtime.sendEvent(workflowId, { type: 'SUBMIT' })
+    await sleep(500)
 
-    // Simulate expired lease
-    await ctx.db.collection('workflow_state').updateOne(
-      { _id: workflowId },
-      { $set: { lockedUntil: new Date(Date.now() - 10_000) } },
-    )
+    const backdated = new Date(Date.now() - 10_000).toISOString()
+    ;(ctx.store as any).db
+      ?.prepare(`UPDATE workflow_instances SET locked_until = ? WHERE id = ?`)
+      ?.run(backdated, workflowId)
 
     await sleep(600)
 
-    // Second engine can now acquire lease and advance
-    await ctx.engine.sendEvent(workflowId, { type: 'PAYMENT_CAPTURED' })
-    await sleep(300)
+    await ctx.runtime.sendEvent(workflowId, { type: 'PAYMENT_CAPTURED' })
+    await sleep(500)
 
-    const doc = await ctx.engine.getWorkflow(workflowId)
+    const doc = await ctx.runtime.getWorkflow(workflowId)
     expect(doc!.currentState).toBe('fulfilling')
 
-    const history = await ctx.engine.getHistory(workflowId)
+    const history = await ctx.runtime.getHistory(workflowId)
     const toStates = history.map((h) => h.toState)
     expect(toStates).toContain('payment_processing')
     expect(toStates).toContain('fulfilling')

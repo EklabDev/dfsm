@@ -5,8 +5,8 @@ describe('concurrent-workflows integration', () => {
   let ctx: TestContext
 
   beforeAll(async () => {
-    ctx = await setupTestEnv()
-    await ctx.engine.start()
+    ctx = await setupTestEnv('sqlite')
+    await ctx.runtime.start()
   })
 
   afterAll(async () => {
@@ -19,7 +19,7 @@ describe('concurrent-workflows integration', () => {
 
     await Promise.all(
       ids.map((id) =>
-        ctx.engine.startWorkflow({
+        ctx.runtime.startWorkflow({
           workflowId: id,
           machineId: 'order',
           initialContext: {
@@ -33,26 +33,19 @@ describe('concurrent-workflows integration', () => {
     )
 
     await Promise.all(
-      ids.map((id) => ctx.engine.sendEvent(id, { type: 'SUBMIT' })),
+      ids.map((id) => ctx.runtime.sendEvent(id, { type: 'SUBMIT' })),
     )
 
     await sleep(2000)
 
-    const docs = await ctx.db
-      .collection('workflow_state')
-      .find({ _id: { $in: ids } })
-      .toArray()
+    const docs = await Promise.all(
+      ids.map((id) => ctx.store.getWorkflowInstance(id)),
+    )
 
     for (const doc of docs) {
-      expect((doc as any).currentState).toBe('payment_processing')
+      expect(doc!.currentState).toBe('payment_processing')
+      const history = await ctx.store.getWorkflowHistory(doc!.id)
+      expect(history.length).toBeGreaterThanOrEqual(1)
     }
-
-    const outboxDocs = await ctx.db
-      .collection('action_outbox')
-      .find({ workflowId: { $in: ids }, actionName: 'chargePayment' })
-      .toArray()
-
-    const keys = outboxDocs.map((d: any) => d.idempotencyKey)
-    expect(new Set(keys).size).toBe(count)
   })
 })

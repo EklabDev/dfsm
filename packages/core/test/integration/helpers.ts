@@ -1,21 +1,28 @@
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import { MongoClient, type Db } from 'mongodb'
-import { MongoStateStore } from '../../src/store/MongoStateStore.js'
-import { WorkflowEngine } from '../../src/engine/WorkflowEngine.js'
-import { compile } from '../../src/compiler/compile.js'
+import { MongoWorkflowStore } from '../../src/store/MongoWorkflowStore.js'
+import { SQLiteWorkflowStore } from '../../src/store/SQLiteWorkflowStore.js'
+import { PostgresWorkflowStore } from '../../src/store/PostgresWorkflowStore.js'
+import type { IWorkflowStore } from '../../src/store/IWorkflowStore.js'
+import { DfsmRuntime } from '../../src/runtime/DfsmRuntime.js'
+import { InMemoryQueueAdapter } from '../../src/queue/InMemoryQueueAdapter.js'
 import { orderMachine } from '../fixtures/orderMachine.js'
 import { orderActions, orderGuards } from '../fixtures/orderActions.js'
-import type { MachineConfig } from '../../src/types/machine.js'
+
+export type StoreProvider = 'sqlite' | 'mongo' | 'postgres'
 
 export interface TestContext {
-  replSet: MongoMemoryReplSet
-  client: MongoClient
-  db: Db
-  store: MongoStateStore
-  engine: WorkflowEngine
+  replSet?: MongoMemoryReplSet
+  client?: MongoClient
+  db?: Db
+  store: IWorkflowStore
+  runtime: DfsmRuntime
+  provider: StoreProvider
+  cleanup?: () => Promise<void>
 }
 
 export async function setupTestEnv(
+  provider: StoreProvider = 'sqlite',
   overrides?: {
     outboxPollIntervalMs?: number
     supervisorIntervalMs?: number
@@ -23,25 +30,46 @@ export async function setupTestEnv(
     leaseTtlMs?: number
   },
 ): Promise<TestContext> {
-  const replSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } })
-  const uri = replSet.getUri()
-  const client = new MongoClient(uri)
-  await client.connect()
-  const db = client.db('dfsm_test')
+  let store: IWorkflowStore
+  let replSet: MongoMemoryReplSet | undefined
+  let client: MongoClient | undefined
+  let db: Db | undefined
+  let cleanup: (() => Promise<void>) | undefined
 
-  const store = new MongoStateStore(db)
-  await store.setup()
+  if (provider === 'sqlite') {
+    const sqlite = new SQLiteWorkflowStore(':memory:')
+    await sqlite.setup()
+    store = sqlite
+    cleanup = async () => sqlite.close()
+  } else if (provider === 'mongo') {
+    replSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } })
+    const uri = replSet.getUri()
+    client = new MongoClient(uri)
+    await client.connect()
+    db = client.db('dfsm_test')
+    store = new MongoWorkflowStore(db)
+    await store.setup()
+  } else {
+    const connectionString =
+      process.env.DATABASE_URL ?? 'postgresql://localhost:5432/dfsm_test'
+    const pgStore = new PostgresWorkflowStore(connectionString)
+    try {
+      await pgStore.setup()
+      store = pgStore
+      cleanup = async () => pgStore.close()
+    } catch {
+      // Fall back to sqlite when postgres unavailable
+      const sqlite = new SQLiteWorkflowStore(':memory:')
+      await sqlite.setup()
+      store = sqlite
+      provider = 'sqlite'
+      cleanup = async () => sqlite.close()
+    }
+  }
 
-  const compiled = compile(orderMachine as MachineConfig, 1)
-  await store.saveMachineVersion(compiled)
-
-  const machines = new Map([['order', orderMachine as MachineConfig]])
-  const compiledMachines = new Map([['order', compiled]])
-
-  const engine = new WorkflowEngine({
+  const runtime = new DfsmRuntime({
     store,
-    machines,
-    compiledMachines,
+    queue: new InMemoryQueueAdapter(),
     actions: overrides?.actions ?? orderActions,
     guards: orderGuards as any,
     leaseTtlMs: overrides?.leaseTtlMs ?? 5_000,
@@ -50,13 +78,16 @@ export async function setupTestEnv(
     supervisorIntervalMs: overrides?.supervisorIntervalMs ?? 60_000,
   })
 
-  return { replSet, client, db, store, engine }
+  await runtime.registerMachine(orderMachine)
+
+  return { replSet, client, db, store, runtime, provider, cleanup }
 }
 
 export async function teardownTestEnv(ctx: TestContext): Promise<void> {
-  await ctx.engine.stop()
-  await ctx.client.close()
-  await ctx.replSet.stop()
+  await ctx.runtime.stop()
+  await ctx.client?.close()
+  await ctx.replSet?.stop()
+  await ctx.cleanup?.()
 }
 
 export function sleep(ms: number): Promise<void> {

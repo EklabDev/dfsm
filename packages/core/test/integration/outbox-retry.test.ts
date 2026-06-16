@@ -23,8 +23,8 @@ describe('outbox-retry integration', () => {
       ['recordCancellation', async () => ({ cancelReason: 'test' })],
     ])
 
-    ctx = await setupTestEnv({ outboxPollIntervalMs: 100, actions: retryActions })
-    await ctx.engine.start()
+    ctx = await setupTestEnv('sqlite', { outboxPollIntervalMs: 100, actions: retryActions })
+    await ctx.runtime.start()
   })
 
   afterAll(async () => {
@@ -32,7 +32,7 @@ describe('outbox-retry integration', () => {
   })
 
   it('retries failed actions and eventually succeeds', async () => {
-    await ctx.engine.startWorkflow({
+    await ctx.runtime.startWorkflow({
       workflowId: 'ORD-RETRY-1',
       machineId: 'order',
       initialContext: {
@@ -43,10 +43,10 @@ describe('outbox-retry integration', () => {
       },
     })
 
-    await ctx.engine.sendEvent('ORD-RETRY-1', { type: 'SUBMIT' })
+    await ctx.runtime.sendEvent('ORD-RETRY-1', { type: 'SUBMIT' })
     await sleep(3000)
 
-    const doc = await ctx.engine.getWorkflow('ORD-RETRY-1')
+    const doc = await ctx.runtime.getWorkflow('ORD-RETRY-1')
     expect(doc!.context.chargeId).toBeDefined()
     expect(callCount).toBeGreaterThanOrEqual(3)
   })

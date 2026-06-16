@@ -1,8 +1,8 @@
 {
   "name": "dfsm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Durable finite state machines with MongoDB-native persistence and compile-time type safety",
+  "description": "Durable finite state machines with provider-agnostic persistence and queue-driven execution",
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
@@ -11,8 +11,7 @@
     "lint": "turbo run lint",
     "docs:api": "typedoc --entryPoints packages/core/src/index.ts --out docs/api",
     "publish:npm": "pnpm --filter @eklabdev/dfsm run build && pnpm --filter @eklabdev/dfsm publish --access public",
-    "publish:npm:viz": "pnpm --filter @eklabdev/dfsm-viz run build && pnpm --filter @eklabdev/dfsm-viz publish --access public",
-    "publish:npm:cli": "pnpm --filter @eklabdev/dfsm-cli run build && pnpm --filter @eklabdev/dfsm-cli publish --access public"
+    "publish:npm:viz": "pnpm --filter @eklabdev/dfsm-viz run build && pnpm --filter @eklabdev/dfsm-viz publish --access public"
   },
   "devDependencies": {
     "turbo": "^2.0.0",

@@ -2,6 +2,15 @@
   "name": "@eklabdev/dfsm",
   "version": "0.2.0",
   "description": "Durable finite state machines with provider-agnostic persistence and queue-driven execution",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EklabDev/dfsm.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/EklabDev/dfsm/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/EklabDev/dfsm/issues"
+  },
   "publishConfig": {
     "access": "public"
   },

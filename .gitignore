@@ -1,0 +1,48 @@
+# Dependencies & Build Outputs
+node_modules/
+dist/
+build/
+out/
+coverage/
+*.vsix
+*.tsbuildinfo
+
+# Java / Maven / Gradle
+target/
+.mvn/timing.properties
+*.jar
+*.war
+*.ear
+*.class
+
+# C# / .NET
+bin/
+obj/
+*.nupkg
+*.snupkg
+*.user
+
+# Go
+*.exe
+*.test
+*.out
+vendor/
+
+# Rust
+**/target/
+Cargo.lock
+
+# Databases & Local Temp
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# OS & Editor
+.DS_Store
+.idea/
+*.swp
+.env
+.env.local
+

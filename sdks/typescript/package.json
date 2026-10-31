@@ -1,0 +1,91 @@
+{
+  "name": "@eklabdev/dfsm",
+  "version": "1.0.0",
+  "description": "Durable Finite State Machine (DFSM) workflow & Saga orchestration engine with XState-aligned YAML, composable decorators, and pluggable SQL/NoSQL persistence.",
+  "keywords": [
+    "dfsm",
+    "fsm",
+    "xstate",
+    "statechart",
+    "workflow",
+    "saga",
+    "durable-execution",
+    "orchestration",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "EKLabDev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eklabdev/dfsm.git",
+    "directory": "sdks/typescript"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "sync-schema": "mkdir -p schemas && cp ../../spec/dfsm-v1.schema.json schemas/dfsm-v1.schema.json",
+    "prebuild": "npm run sync-schema",
+    "build": "tsup",
+    "start:api": "tsx examples/06-express-api-server/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run sync-schema && vitest run",
+    "test:unit": "npm run sync-schema && vitest run tests/unit tests/conformance",
+    "test:integration": "npm run sync-schema && vitest run tests/integration",
+    "prepublishOnly": "npm run typecheck && npm run test:unit && npm run build"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "yaml": "^2.7.0"
+  },
+  "optionalDependencies": {
+    "mongodb": "^6.13.0",
+    "pg": "^8.13.3",
+    "zod": "^3.24.2"
+  },
+  "peerDependencies": {
+    "mongodb": ">=6.0.0",
+    "pg": ">=8.0.0",
+    "zod": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "mongodb": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.13.5",
+    "@types/pg": "^8.11.11",
+    "express": "^5.3.0",
+    "mongodb": "^6.13.0",
+    "pg": "^8.13.3",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7",
+    "zod": "^3.24.2"
+  }
+}

@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=../dfsm-v1.schema.json
+dfsm: "1.0"
+id: resilient-override
+version: "1.0.0"
+description: Overridden error state, retry/backoff, circuit breaker, and onFail alternative transition
+initial: ready
+
+registry:
+  namespace: "conformance.resilience"
+  strict: true
+
+defaults:
+  retry:
+    maxAttempts: 2
+    backoff:
+      strategy: fixed
+      initialDelayMs: 5
+      maxDelayMs: 20
+      multiplier: 1
+  onFail:
+    compensate: false
+    target: error
+
+states:
+  ready:
+    on:
+      CALL_PRIMARY:
+        target: succeeded
+        transition: callPrimary
+        retry:
+          maxAttempts: 3
+        circuitBreaker:
+          enabled: true
+          failureThreshold: 2
+          slidingWindowSize: 4
+          openDurationMs: 5000
+          halfOpenMaxCalls: 1
+        onFail:
+          compensate: false
+          target: fallback_queue
+      CALL_HARD_FAIL:
+        target: succeeded
+        transition: alwaysFail
+
+  fallback_queue:
+    on:
+      RETRY_LATER: ready
+
+  succeeded:
+    type: final
+
+  error:
+    entry: [alertError]
+    on:
+      RECOVER: ready
+

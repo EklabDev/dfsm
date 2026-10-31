@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: dfsm-postgres
+    environment:
+      POSTGRES_USER: dfsm
+      POSTGRES_PASSWORD: dfsm_password
+      POSTGRES_DB: dfsm_test
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dfsm -d dfsm_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  mongodb:
+    image: mongo:8.0
+    container_name: dfsm-mongodb
+    ports:
+      - "27018:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+

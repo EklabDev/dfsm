@@ -1,0 +1,380 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/eklabdev/dfsm/main/spec/dfsm-v1.schema.json",
+  "title": "DFSM Machine Definition (v1.0)",
+  "description": "Canonical XState-aligned Durable Finite State Machine YAML/JSON specification for eklabdev/dfsm.",
+  "type": "object",
+  "required": ["dfsm", "id", "states"],
+  "additionalProperties": false,
+  "properties": {
+    "dfsm": {
+      "type": "string",
+      "const": "1.0",
+      "description": "DFSM specification version. Must be \"1.0\"."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 1,
+      "description": "Unique identifier of the state machine."
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0.0",
+      "description": "Version of this machine definition."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable summary of the workflow."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["compound", "parallel"],
+      "default": "compound",
+      "description": "Root machine state type. Defaults to 'compound'."
+    },
+    "initial": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Initial child state key when root type is 'compound'."
+    },
+    "registry": {
+      "$ref": "#/definitions/RegistryConfig"
+    },
+    "defaults": {
+      "$ref": "#/definitions/TransitionPolicy"
+    },
+    "hooks": {
+      "$ref": "#/definitions/MachineHooksConfig"
+    },
+    "effects": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Optional machine-level list of registered effect handlers (e.g. sub-effects invoked conditionally via runEffect) verified on machine creation when registry.strict is true."
+    },
+    "maxEffectChainDepth": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 25,
+      "description": "Maximum nested effect / automatic transition chain depth per transaction (default 25)."
+    },
+    "states": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/definitions/StateNode"
+      },
+      "description": "Map of state names to state node definitions. A top-level 'error' final state is automatically injected if omitted."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": { "const": "parallel" }
+        },
+        "required": ["type"]
+      },
+      "else": {
+        "required": ["initial"]
+      }
+    }
+  ],
+  "definitions": {
+    "RegistryConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Configures how transition, compensation, and effect handlers are resolved from the Singleton FSMRegistry.",
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Namespace prefix used when resolving handler names in FSMRegistry (e.g. 'orders.checkout')."
+        },
+        "strict": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true (default), fails fast if any referenced transition, compensate, effect, or hook handler is not registered in FSMRegistry."
+        }
+      }
+    },
+    "HookHandlerRef": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "description": "Single registered lifecycle hook handler key in FSMRegistry."
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Ordered list of registered lifecycle hook handler keys in FSMRegistry."
+        }
+      ]
+    },
+    "MachineHooksConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Transaction lifecycle hook handler bindings resolved from FSMRegistry upon machine creation.",
+      "properties": {
+        "onStart": {
+          "$ref": "#/definitions/HookHandlerRef",
+          "description": "Invoked after startTransaction persists the initial state."
+        },
+        "beforeTransition": {
+          "$ref": "#/definitions/HookHandlerRef",
+          "description": "Invoked after pre-step input validation passes and before step execution."
+        },
+        "afterTransition": {
+          "$ref": "#/definitions/HookHandlerRef",
+          "description": "Invoked after each transition step commits to StateStore."
+        },
+        "onCompensate": {
+          "$ref": "#/definitions/HookHandlerRef",
+          "description": "Invoked after each LIFO Saga compensation step executes."
+        },
+        "onComplete": {
+          "$ref": "#/definitions/HookHandlerRef",
+          "description": "Invoked when a transaction reaches COMPLETED."
+        },
+        "onTerminal": {
+          "$ref": "#/definitions/HookHandlerRef",
+          "description": "Invoked when a transaction settles into any terminal status (COMPLETED, COMPENSATED, FAILED)."
+        }
+      }
+    },
+    "BackoffConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["fixed", "linear", "exponential", "exponential_jitter"],
+          "description": "Delay progression algorithm between retry attempts."
+        },
+        "initialDelayMs": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Base delay in milliseconds before the first retry."
+        },
+        "maxDelayMs": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Upper bound in milliseconds on computed backoff delay."
+        },
+        "multiplier": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Growth factor for exponentialbackoff strategies."
+        }
+      }
+    },
+    "RetryConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum total execution attempts (1 = no retries, 4 = 1 initial call + up to 3 retries)."
+        },
+        "backoff": {
+          "$ref": "#/definitions/BackoffConfig"
+        }
+      }
+    },
+    "CircuitBreakerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether circuit breaker protection is active for this transition."
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional shared circuit breaker identifier. Defaults to '<machineId>:<statePath>:<event>'."
+        },
+        "failureThreshold": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Consecutive or windowed failures required to trip the breaker to OPEN."
+        },
+        "slidingWindowSize": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of recent outcomes tracked in CLOSED state."
+        },
+        "openDurationMs": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Duration in milliseconds the circuit remains OPEN before entering HALF_OPEN."
+        },
+        "halfOpenMaxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of probe calls allowed in HALF_OPEN before closing the circuit."
+        }
+      }
+    },
+    "OnFailConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "compensate": {
+          "type": "boolean",
+          "description": "When true, unwinds the transaction's persisted compensation stack in LIFO order upon terminal transition failure."
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Alternative state target on failure (e.g. 'error', sibling state, or '#machineId.path'). Defaults to top-level 'error'."
+        }
+      }
+    },
+    "BenchmarkConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether execution timing and telemetry are emitted to the BenchmarkLogEngine."
+        }
+      }
+    },
+    "TransitionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "retry": {
+          "$ref": "#/definitions/RetryConfig"
+        },
+        "circuitBreaker": {
+          "$ref": "#/definitions/CircuitBreakerConfig"
+        },
+        "onFail": {
+          "$ref": "#/definitions/OnFailConfig"
+        },
+        "benchmark": {
+          "$ref": "#/definitions/BenchmarkConfig"
+        }
+      }
+    },
+    "TransitionDefinition": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "description": "Shorthand target state reference for pure state transitions without a custom function."
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "target": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Target state (sibling name, relative dot-path, or '#<machineId>.<path>'). Optional if the transition function dynamically returns targetState or performs an internal self-transition."
+            },
+            "transition": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Registered transition function key in Singleton FSMRegistry."
+            },
+            "compensate": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Registered compensation function key pushed onto the transaction's Saga stack when this step succeeds."
+            },
+            "effects": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "Registered side-effect handler keys invoked after state persistence."
+            },
+            "description": {
+              "type": "string"
+            },
+            "retry": {
+              "$ref": "#/definitions/RetryConfig"
+            },
+            "circuitBreaker": {
+              "$ref": "#/definitions/CircuitBreakerConfig"
+            },
+            "onFail": {
+              "$ref": "#/definitions/OnFailConfig"
+            },
+            "benchmark": {
+              "$ref": "#/definitions/BenchmarkConfig"
+            }
+          }
+        }
+      ]
+    },
+    "StateNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["atomic", "compound", "parallel", "final"],
+          "description": "State node classification. Inferred as 'compound' when 'states' is present and 'atomic' otherwise."
+        },
+        "description": {
+          "type": "string"
+        },
+        "initial": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Initial child state key (required for 'compound' states)."
+        },
+        "entry": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Effect handler keys invoked upon entering this state."
+        },
+        "exit": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Effect handler keys invoked upon exiting this state."
+        },
+        "on": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/TransitionDefinition"
+          },
+          "description": "Event-to-transition mappings handled by this state."
+        },
+        "onDone": {
+          "$ref": "#/definitions/TransitionDefinition",
+          "description": "Automatic transition fired when a 'compound' child or all 'parallel' child regions enter a 'final' state."
+        },
+        "states": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/definitions/StateNode"
+          },
+          "description": "Child states (for 'compound' or 'parallel' states)."
+        }
+      }
+    }
+  }
+}
+

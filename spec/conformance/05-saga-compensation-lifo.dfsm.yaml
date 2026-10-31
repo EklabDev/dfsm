@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../dfsm-v1.schema.json
+dfsm: "1.0"
+id: travel-booking-saga
+version: "1.0.0"
+description: Multi-step Saga pushing compensation entries and unwinding in LIFO order on failure
+initial: step_flight
+
+registry:
+  namespace: "conformance.saga"
+  strict: true
+
+defaults:
+  retry:
+    maxAttempts: 1
+  onFail:
+    compensate: true
+    target: error
+
+states:
+  step_flight:
+    on:
+      BOOK_FLIGHT:
+        target: step_hotel
+        transition: bookFlight
+        compensate: cancelFlight
+
+  step_hotel:
+    on:
+      BOOK_HOTEL:
+        target: step_car
+        transition: bookHotel
+        compensate: cancelHotel
+
+  step_car:
+    on:
+      BOOK_CAR:
+        target: confirmed
+        transition: bookCar
+        compensate: cancelCar
+
+  confirmed:
+    type: final
+

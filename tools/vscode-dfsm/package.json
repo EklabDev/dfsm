@@ -1,0 +1,118 @@
+{
+  "name": "vscode-dfsm",
+  "publisher": "eklabdev",
+  "displayName": "DFSM Statechart Studio",
+  "description": "Interactive Statechart Visualizer, YAML Schema & Semantic Validator, and Saga Resilience Inspector for DFSM (eklabdev/dfsm) v1.0.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eklabdev/dfsm.git",
+    "directory": "tools/vscode-dfsm"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Linters",
+    "Snippets",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "dfsm",
+    "state-machine",
+    "statechart",
+    "xstate",
+    "saga",
+    "workflow",
+    "yaml",
+    "visualizer"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:yaml",
+    "onCommand:dfsm.openVisualizer",
+    "onCommand:dfsm.validateMachine",
+    "onCommand:dfsm.newMachineFromTemplate"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "dfsm.openVisualizer",
+        "title": "DFSM: Open Statechart Visualizer",
+        "icon": {
+          "light": "resources/icons/dfsm-light.svg",
+          "dark": "resources/icons/dfsm-dark.svg"
+        }
+      },
+      {
+        "command": "dfsm.validateMachine",
+        "title": "DFSM: Validate Machine Definition"
+      },
+      {
+        "command": "dfsm.newMachineFromTemplate",
+        "title": "DFSM: New Machine Template"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "dfsm.openVisualizer",
+          "when": "dfsm.isMachineDocument",
+          "group": "navigation@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "dfsm.openVisualizer",
+          "when": "dfsm.isMachineDocument || editorLangId == yaml"
+        },
+        {
+          "command": "dfsm.validateMachine",
+          "when": "dfsm.isMachineDocument || editorLangId == yaml"
+        },
+        {
+          "command": "dfsm.newMachineFromTemplate"
+        }
+      ]
+    },
+    "yamlValidation": [
+      {
+        "fileMatch": [
+          "*.dfsm.yaml",
+          "*.dfsm.yml"
+        ],
+        "url": "./schemas/dfsm-v1.schema.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "yaml",
+        "path": "./snippets/dfsm.code-snippets"
+      }
+    ]
+  },
+  "scripts": {
+    "sync-schema": "node scripts/sync-schema.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run sync-schema && npm run typecheck && node scripts/build.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package": "npm run build && npx @vscode/vsce package --no-dependencies",
+    "vscode:prepublish": "npm run build"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.5"
+  }
+}

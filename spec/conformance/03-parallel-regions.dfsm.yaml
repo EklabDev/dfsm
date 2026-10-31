@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../dfsm-v1.schema.json
+dfsm: "1.0"
+id: order-parallel
+version: "1.0.0"
+description: Orthogonal parallel state regions with automatic onDone synchronization
+initial: created
+
+registry:
+  namespace: "conformance.parallel"
+  strict: true
+
+states:
+  created:
+    on:
+      START_FULFILLMENT:
+        target: fulfilling
+        transition: initFulfillment
+
+  fulfilling:
+    type: parallel
+    onDone:
+      target: shipped
+      effects: [notifyShipped]
+    states:
+      billing:
+        initial: pending_charge
+        states:
+          pending_charge:
+            on:
+              CHARGE_SUCCESS:
+                target: paid
+                transition: recordPaid
+          paid:
+            type: final
+      warehouse:
+        initial: picking
+        states:
+          picking:
+            on:
+              PACKED:
+                target: packed
+                transition: recordPacked
+          packed:
+            type: final
+
+  shipped:
+    type: final
+

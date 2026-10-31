@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../dfsm-v1.schema.json
+dfsm: "1.0"
+id: traffic-light
+version: "1.0.0"
+description: Simple standalone atomic states with effects and final state
+initial: red
+
+registry:
+  namespace: "conformance.traffic"
+  strict: true
+
+states:
+  red:
+    entry: [onEnterRed]
+    exit: [onExitRed]
+    on:
+      NEXT:
+        target: green
+        transition: recordStep
+      SHUTDOWN: off_state
+
+  green:
+    on:
+      NEXT:
+        target: yellow
+        transition: recordStep
+
+  yellow:
+    on:
+      NEXT:
+        target: red
+        transition: recordStep
+      FAIL_BULB:
+        target: green
+        transition: brokenBulb
+
+  off_state:
+    type: final
+

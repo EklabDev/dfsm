@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../dfsm-v1.schema.json
+dfsm: "1.0"
+id: payment-hierarchy
+version: "1.0.0"
+description: Compound parent/child states with event bubbling and LCA entry/exit ordering
+initial: active
+
+registry:
+  namespace: "conformance.hierarchy"
+  strict: true
+
+states:
+  active:
+    initial: idle
+    entry: [enterActive]
+    exit: [exitActive]
+    on:
+      CANCEL:
+        target: cancelled
+        transition: markCancelled
+    states:
+      idle:
+        entry: [enterIdle]
+        exit: [exitIdle]
+        on:
+          BEGIN_AUTH:
+            target: authorizing
+            transition: beginAuth
+      authorizing:
+        entry: [enterAuthorizing]
+        exit: [exitAuthorizing]
+        on:
+          AUTH_OK:
+            target: captured
+            transition: captureFunds
+      captured:
+        type: final
+    onDone:
+      target: settled
+
+  settled:
+    type: final
+
+  cancelled:
+    type: final

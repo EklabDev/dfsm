@@ -1,0 +1,104 @@
+{
+  "version": "1.0.0",
+  "scenarios": [
+    {
+      "id": "atomic-cycle-and-default-error",
+      "file": "01-atomic-transitions.dfsm.yaml",
+      "machineId": "traffic-light",
+      "description": "Cycles red -> green -> yellow -> error (implicit default error state on unhandled failure)",
+      "expectedInitialState": "red",
+      "steps": [
+        { "event": "NEXT", "input": { "tick": 1 }, "expectedState": "green", "expectedStatus": "IDLE" },
+        { "event": "NEXT", "input": { "tick": 2 }, "expectedState": "yellow", "expectedStatus": "IDLE" },
+        { "event": "FAIL_BULB", "input": { "fail": true }, "expectedState": "error", "expectedStatus": "FAILED" }
+      ]
+    },
+    {
+      "id": "hierarchical-bubbling-cancel",
+      "file": "02-hierarchical-bubbling.dfsm.yaml",
+      "machineId": "payment-hierarchy",
+      "description": "Enters active.idle, transitions to active.authorizing, bubbles CANCEL to parent 'active' -> cancelled",
+      "expectedInitialState": { "active": "idle" },
+      "steps": [
+        { "event": "BEGIN_AUTH", "input": { "amount": 50 }, "expectedState": { "active": "authorizing" }, "expectedStatus": "IDLE" },
+        { "event": "CANCEL", "input": { "reason": "user_abort" }, "expectedState": "cancelled", "expectedStatus": "COMPLETED" }
+      ]
+    },
+    {
+      "id": "hierarchical-ondone-completion",
+      "file": "02-hierarchical-bubbling.dfsm.yaml",
+      "machineId": "payment-hierarchy",
+      "description": "Child reaching final 'captured' triggers parent onDone -> 'settled'",
+      "expectedInitialState": { "active": "idle" },
+      "steps": [
+        { "event": "BEGIN_AUTH", "input": { "amount": 100 }, "expectedState": { "active": "authorizing" }, "expectedStatus": "IDLE" },
+        { "event": "AUTH_OK", "input": { "authCode": "OK99" }, "expectedState": "settled", "expectedStatus": "COMPLETED" }
+      ]
+    },
+    {
+      "id": "parallel-regions-ondone",
+      "file": "03-parallel-regions.dfsm.yaml",
+      "machineId": "order-parallel",
+      "description": "Enters parallel 'fulfilling', advances orthogonal regions independently, triggers onDone -> 'shipped' when both reach final",
+      "expectedInitialState": "created",
+      "steps": [
+        {
+          "event": "START_FULFILLMENT",
+          "input": {},
+          "expectedState": {
+            "fulfilling": {
+              "billing": "pending_charge",
+              "warehouse": "picking"
+            }
+          },
+          "expectedStatus": "IDLE"
+        },
+        {
+          "event": "CHARGE_SUCCESS",
+          "input": {},
+          "expectedState": {
+            "fulfilling": {
+              "billing": "paid",
+              "warehouse": "picking"
+            }
+          },
+          "expectedStatus": "IDLE"
+        },
+        {
+          "event": "PACKED",
+          "input": {},
+          "expectedState": "shipped",
+          "expectedStatus": "COMPLETED"
+        }
+      ]
+    },
+    {
+      "id": "policy-merge-decorator-precedence-and-fallback",
+      "file": "04-error-override-and-fallback.dfsm.yaml",
+      "machineId": "resilient-override",
+      "description": "Decorator retry=4 overrides YAML retry=3 while inheriting YAML circuitBreaker; failure routes to fallback_queue; custom error state supports RECOVER",
+      "expectedInitialState": "ready",
+      "decoratorOverrides": {
+        "conformance.resilience.callPrimary": {
+          "retry": { "maxAttempts": 4 }
+        }
+      },
+      "expectedEffectiveMaxAttempts": 4,
+      "expectedEffectiveCircuitBreakerEnabled": true
+    },
+    {
+      "id": "saga-compensation-lifo-unwind",
+      "file": "05-saga-compensation-lifo.dfsm.yaml",
+      "machineId": "travel-booking-saga",
+      "description": "Flight & Hotel succeed; Car fails -> unwinds Hotel then Flight in LIFO order -> COMPENSATED in 'error'",
+      "expectedInitialState": "step_flight",
+      "steps": [
+        { "event": "BOOK_FLIGHT", "input": { "flight": "DF101" }, "expectedState": "step_hotel", "expectedStatus": "IDLE" },
+        { "event": "BOOK_HOTEL", "input": { "hotel": "Grand" }, "expectedState": "step_car", "expectedStatus": "IDLE" },
+        { "event": "BOOK_CAR", "input": { "fail": true }, "expectedState": "error", "expectedStatus": "COMPENSATED" }
+      ],
+      "expectedCompensationOrder": ["conformance.saga.cancelHotel", "conformance.saga.cancelFlight"]
+    }
+  ]
+}
+

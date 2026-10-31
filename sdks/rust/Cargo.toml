@@ -1,0 +1,48 @@
+[package]
+name = "eklabdev-dfsm"
+version = "1.0.0"
+edition = "2021"
+authors = ["EKLab <dev@eklab.dev>"]
+description = "Deterministic Finite State Machine (DFSM) engine with XState statecharts, Saga compensation, and resilience in Rust"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/eklabdev/dfsm"
+readme = "README.md"
+keywords = ["fsm", "statechart", "saga", "orchestration", "workflow"]
+categories = ["asynchronous", "concurrency", "algorithms"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+jsonschema = "0.17"
+chrono = "0.4"
+uuid = { version = "1", features = ["v4"] }
+futures-util = "0.3"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[[example]]
+name = "01-simple-traffic-light"
+path = "examples/01-simple-traffic-light/main.rs"
+
+[[example]]
+name = "02-yaml-validation"
+path = "examples/02-yaml-validation/main.rs"
+
+[[example]]
+name = "03-hierarchical-parallel"
+path = "examples/03-hierarchical-parallel/main.rs"
+
+[[example]]
+name = "04-policy-saga-recovery"
+path = "examples/04-policy-saga-recovery/main.rs"
+
+[[example]]
+name = "05-multi-actor-ops"
+path = "examples/05-multi-actor-ops/main.rs"

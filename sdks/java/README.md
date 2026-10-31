@@ -311,17 +311,18 @@ var dryRun = actor.forceCleanUp(new DfsmModels.ForceCleanUpOptions(
 
 ---
 
-## 8. Progressive Examples (`01` to `05`)
+## 8. Progressive Examples (`01` to `06`)
 
-All 5 runnable examples live in [`src/main/java/io/github/eklabdev/dfsm/examples/`](src/main/java/io/github/eklabdev/dfsm/examples):
+All runnable examples live in [`src/main/java/io/github/eklabdev/dfsm/examples/`](src/main/java/io/github/eklabdev/dfsm/examples) and [`examples/06-spring-boot-api-server`](examples/06-spring-boot-api-server):
 
-| # | Class | What It Demonstrates | Run Command |
-|---|-------|----------------------|-------------|
+| # | Class / Location | What It Demonstrates | Run Command |
+|---|------------------|----------------------|-------------|
 | **01** | `Example01SimpleTrafficLight` | Fluent `MachineBuilder`, `TransitionDecoratorBuilder`, typed outputs, `entry`/`exit` effects | `./mvnw compile exec:java -Dexec.mainClass="io.github.eklabdev.dfsm.examples.Example01SimpleTrafficLight"` |
 | **02** | `Example02YamlJakartaValidation` | `dfsm: "1.0"` YAML + `@DfsmTransition` + pre-flight Jakarta `@Email`/`@Positive`/`@Valid` rejection | `./mvnw compile exec:java -Dexec.mainClass="io.github.eklabdev.dfsm.examples.Example02YamlJakartaValidation"` |
 | **03** | `Example03HierarchicalParallelWorkflow` | Compound parent `CANCEL` bubbling + orthogonal `parallel` regions + automatic `onDone` | `./mvnw compile exec:java -Dexec.mainClass="io.github.eklabdev.dfsm.examples.Example03HierarchicalParallelWorkflow"` |
 | **04** | `Example04PolicyMergeAndSagaCompensation` | `@Retry(4)` overriding YAML `retry: 3` (single loop!) + YAML `circuitBreaker` + LIFO Saga rollback + `BenchmarkLogEngine` | `./mvnw compile exec:java -Dexec.mainClass="io.github.eklabdev.dfsm.examples.Example04PolicyMergeAndSagaCompensation"` |
 | **05** | `Example05MultiActorOpsHooksAndRecovery` | YAML `hooks:`/`effects:`, conditional `@DfsmEffect` router (`runEffect` + `actor().transition`), active/terminal queries, crash recovery (`COMPENSATE`) & `forceCleanUp` | `./mvnw compile exec:java -Dexec.mainClass="io.github.eklabdev.dfsm.examples.Example05MultiActorOpsHooksAndRecovery"` |
+| **06** | [`examples/06-spring-boot-api-server`](examples/06-spring-boot-api-server) | **Full Production Spring Boot REST API Server**: E2E order fulfillment workflow, YAML-in-response, 6 hooks, `@DfsmEffect` conditional chaining, structured logs (`[DFSM-STEP]`, `[DFSM-HOOK]`), and Postman collection with dynamic `{{orderId}}` | `cd examples/06-spring-boot-api-server && ./mvnw spring-boot:run` |
 
 ---
 

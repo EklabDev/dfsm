@@ -1,0 +1,384 @@
+{
+  "info": {
+    "_postman_id": "c7a82b90-1e43-4db2-8f91-2c50e7a19b06",
+    "name": "DFSM Go Order & Fulfillment API (github.com/eklabdev/dfsm/sdks/go)",
+    "description": "End-to-end Postman Collection for stepping through the DFSM Go REST API Server (`examples/06-http-api-server`).\n\n### Changing the Order ID (`{{orderId}}`)\nYou can change the active order ID in **any** of three ways:\n1. **Collection Variables tab**: Edit `orderId` (default `order-go-101`) — every request automatically uses `{{orderId}}`.\n2. **Request Body of `01a. Create Order`**: Change `\"orderId\"` in JSON; Post-response script updates `{{orderId}}` to match.\n3. **One-click Auto-Generator (`01b. Create Order — Auto-New orderId`)**: Generates a fresh `order-<timestamp>` and stores it in `{{orderId}}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "order-go-101",
+      "type": "string"
+    },
+    {
+      "key": "customerEmail",
+      "value": "buyer@eklab.dev",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Happy Path — Step-by-Step Transitions (1-by-1)",
+      "description": "Walks a single `{{orderId}}` through `created` -> `inventory_reserved` -> parallel `fulfilling` -> automatic `onDone` -> `delivered` (`COMPLETED`).",
+      "item": [
+        {
+          "name": "00. Get Machine Definition & YAML",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/machine",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "machine"]
+            }
+          }
+        },
+        {
+          "name": "01a. Create Order (Uses / Updates {{orderId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created order transaction (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data && data.orderId) {",
+                  "    pm.collectionVariables.set('orderId', data.orderId);",
+                  "    console.log('Active {{orderId}} set to:', data.orderId, '| currentState:', data.currentState, '| status:', data.status, '| availableEvents:', data.availableEvents);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"customer\": \"{{customerEmail}}\",\n  \"amount\": 150.0,\n  \"autoAuthorize\": true,\n  \"simulateFailure\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "01b. Create Order — Auto-New orderId",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const freshId = 'order-go-' + Date.now();",
+                  "pm.collectionVariables.set('orderId', freshId);",
+                  "console.log('Generated fresh orderId:', freshId);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created order transaction (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data && data.orderId) {",
+                  "    pm.collectionVariables.set('orderId', data.orderId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"customer\": \"{{customerEmail}}\",\n  \"amount\": 250.0,\n  \"autoAuthorize\": true,\n  \"simulateFailure\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "02. Get Order Status ({{orderId}})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            }
+          }
+        },
+        {
+          "name": "03. Transition: SUBMIT_ORDER",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"SUBMIT_ORDER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "04. Transition: PACK_COMPLETE (Packaging region)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"PACK_COMPLETE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "05. Transition: BOOK_CARRIER (Shipping region -> onDone -> delivered)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"BOOK_CARRIER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Failure, Saga Rollback & Recovery Path",
+      "item": [
+        {
+          "name": "01. Create Order with simulateFailure=true",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const failId = 'order-fail-' + Date.now();",
+                  "pm.collectionVariables.set('orderId', failId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"customer\": \"fail@example.com\",\n  \"amount\": 99.0,\n  \"autoAuthorize\": false,\n  \"simulateFailure\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "02. Reserve Stock (SUBMIT_ORDER)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"SUBMIT_ORDER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "03. Trigger Payment Failure & Saga Rollback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"AUTHORIZE_PAYMENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "04. Recovery: RESET_ORDER",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"RESET_ORDER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Ops, In-Flight & Terminal Monitoring",
+      "item": [
+        {
+          "name": "Get In-Flight Summary & Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/in-flight",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "in-flight"]
+            }
+          }
+        },
+        {
+          "name": "Get Terminal States",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/terminals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "terminals"]
+            }
+          }
+        },
+        {
+          "name": "Get Scheduler Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduler",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scheduler"]
+            }
+          }
+        },
+        {
+          "name": "Trigger Scheduler Sweep",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduler/sweep",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scheduler", "sweep"]
+            }
+          }
+        },
+        {
+          "name": "Force Cleanup (Dry Run)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"olderThanMs\": 1800000,\n  \"stuckOnly\": true,\n  \"action\": \"MARK_FAIL\",\n  \"dryRun\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cleanup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cleanup"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,123 @@
+# yaml-language-server: $schema=../../../../spec/dfsm-v1.schema.json
+dfsm: "1.0"
+id: express-order-fulfillment
+version: "1.0.0"
+description: End-to-end e-commerce Order & Parallel Fulfillment Saga orchestrated via Express REST API
+initial: created
+
+registry:
+  namespace: "api.orders"
+  strict: true
+
+maxEffectChainDepth: 25
+
+# Sub-effects invoked conditionally via `req.runEffect(...)` inside `evaluatePostReserveRouting`
+# — verified against FSMRegistry on machine creation when `strict: true`!
+effects:
+  - autoAuthorizeWalletEffect
+  - awaitManualPaymentEffect
+
+# Transaction lifecycle hooks resolved from FSMRegistry (`@DfsmHook` on OrderFulfillmentService)
+hooks:
+  onStart: onOrderStarted
+  beforeTransition: onBeforeOrderStep
+  afterTransition: onAfterOrderStep
+  onCompensate: onOrderCompensated
+  onComplete: onOrderCompleted
+  onTerminal: onOrderTerminal
+
+defaults:
+  retry:
+    maxAttempts: 2
+    backoff:
+      strategy: fixed
+      initialDelayMs: 10
+      maxDelayMs: 50
+      multiplier: 1
+  circuitBreaker:
+    enabled: true
+    failureThreshold: 5
+    slidingWindowSize: 10
+    openDurationMs: 30000
+    halfOpenMaxCalls: 1
+  onFail:
+    compensate: true
+    target: error
+  benchmark:
+    enabled: true
+
+states:
+  created:
+    description: Initial order draft created via POST /api/orders
+    on:
+      SUBMIT_ORDER:
+        target: inventory_reserved
+        transition: reserveInventory
+        compensate: releaseInventory
+        description: Validates items and reserves warehouse stock
+      CANCEL_ORDER:
+        target: cancelled
+        transition: cancelDraftOrder
+
+  inventory_reserved:
+    description: Stock is reserved; entry effect routes auto-approved orders directly into AUTHORIZE_PAYMENT
+    entry: [evaluatePostReserveRouting]
+    on:
+      AUTHORIZE_PAYMENT:
+        target: fulfilling
+        transition: authorizePayment
+        compensate: refundPayment
+        retry:
+          maxAttempts: 2 # Overridden to 3 by @Retry(3) decorator on authorizePayment!
+        onFail:
+          compensate: true
+          target: error
+      CANCEL_ORDER:
+        target: cancelled
+        transition: cancelReservedOrder
+
+  fulfilling:
+    type: parallel
+    description: Concurrent warehouse packing and shipping carrier booking
+    onDone:
+      target: delivered
+      effects: [sendDeliveryNotification]
+    states:
+      packaging:
+        initial: packing
+        states:
+          packing:
+            on:
+              PACK_COMPLETE:
+                target: packed
+                transition: completePacking
+          packed:
+            type: final
+
+      shipping:
+        initial: booking_carrier
+        states:
+          booking_carrier:
+            on:
+              BOOK_CARRIER:
+                target: carrier_booked
+                transition: bookShippingCarrier
+          carrier_booked:
+            type: final
+
+  delivered:
+    type: final
+    description: Order packed, shipped, and completed
+
+  cancelled:
+    type: final
+    description: Order cancelled cleanly before fulfillment
+
+  # Overridden error state allowing recovery back to 'created'
+  error:
+    entry: [recordErrorAlert]
+    on:
+      RESET_ORDER:
+        target: created
+        transition: resetAfterError
+

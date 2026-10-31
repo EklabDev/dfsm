@@ -169,14 +169,43 @@ Within each hook slot, subscribers execute in deterministic order:
 
 ## Repository Structure
 
-| Path | Description |
-| :--- | :--- |
-| [`spec/`](./spec) | Canonical `SPECIFICATION.md`, `dfsm-v1.schema.json`, and cross-language conformance test vectors |
-| [`sdks/typescript/`](./sdks/typescript) | TypeScript / Node.js SDK (`@eklabdev/dfsm`) + 6 progressive examples (incl. Express REST API + Postman) + npm publishing guide |
-| [`tools/vscode-dfsm/`](./tools/vscode-dfsm) | VS Code Extension (`eklabdev.vscode-dfsm`) for YAML authoring, diagnostics, and visualization |
-| [`sdks/java/`](./sdks/java) | Java 17+ SDK (`io.github.eklabdev:dfsm-core`) — H2, PostgreSQL, MongoDB, Jakarta Bean Validation, 5 progressive examples, Maven Central & JFrog Artifactory publishing guide |
-| [`sdks/csharp/`](./sdks/csharp) | C# / .NET SDK (`EKLabDev.Dfsm`) *(Wave 3)* |
-| [`sdks/go/`](./sdks/go) | Go SDK (`github.com/eklabdev/dfsm/sdks/go`) *(Wave 4)* |
-| [`sdks/rust/`](./sdks/rust) | Rust SDK (`eklabdev-dfsm`) *(Wave 4)* |
-| [`infra/`](./infra) | `docker-compose.yml` for PostgreSQL and MongoDB integration testing |
+| Path | Description | Status |
+| :--- | :--- | :--- |
+| [`spec/`](./spec) | Canonical `SPECIFICATION.md`, `dfsm-v1.schema.json`, and cross-language conformance test vectors | Canonical Spec |
+| [`tools/vscode-dfsm/`](./tools/vscode-dfsm) | VS Code Extension (`eklabdev.vscode-dfsm`) for YAML authoring, diagnostics, and visualization | Complete & Verified |
+| [`sdks/typescript/`](./sdks/typescript) | TypeScript / Node.js SDK (`@eklabdev/dfsm`) + 6 progressive examples (incl. Express REST API + Postman) + npm packaging | Complete & Verified |
+| [`sdks/java/`](./sdks/java) | Java 17+ SDK (`io.github.eklabdev:dfsm-core`) — H2, PostgreSQL, MongoDB, Spring Boot REST API + Postman, Maven Central guide | Complete & Verified |
+| [`sdks/csharp/`](./sdks/csharp) | C# / .NET SDK (`EKLabDev.Dfsm`) — SQLite, PostgreSQL, MongoDB, ASP.NET Core Minimal API + Postman, NuGet packaging | Complete & Verified |
+| [`sdks/go/`](./sdks/go) | Go SDK (`github.com/eklabdev/dfsm/sdks/go`) — Memory, PostgreSQL, MongoDB, HTTP REST API + Postman | Complete & Verified |
+| [`sdks/rust/`](./sdks/rust) | Rust SDK (`eklabdev-dfsm`) — Memory & pluggable stores, Axum REST API + Postman, Cargo packaging | Complete & Verified |
+| [`infra/`](./infra) | `docker-compose.yml` for PostgreSQL 17 and MongoDB 8.0 integration testing | Active |
+
+---
+
+## Polyglot Conformance Matrix
+
+Every DFSM SDK is verified against the canonical conformance test suite (`spec/conformance/conformance-suite.json`) and delivers 100% semantic and behavioral parity:
+
+| Feature / Capability | TypeScript (`@eklabdev/dfsm`) | Java (`dfsm-core`) | C# (`EKLabDev.Dfsm`) | Go (`dfsm/sdks/go`) | Rust (`eklabdev-dfsm`) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Canonical YAML AST (`dfsm: "1.0"`)** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **JSON Schema Draft 2020-12 Validation** | ✅ (`ajv`) | ✅ (`networknt`) | ✅ (`JsonSchema.Net`) | ✅ (`santhosh-tekuri`) | ✅ (`jsonschema`) |
+| **Compound States & Bubbling** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Parallel Regions & `onDone` Synchronization** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **4-Layer Policy Merging Precedence** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Non-multiplying Exponential Retries & Jitter** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Sliding-Window Circuit Breaker** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **LIFO Saga Compensation Rollback** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **6-Hook Lifecycle Pipeline** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Conditional Effect Routing & Recursion Guards** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **In-Memory State Store** | ✅ (SQLite `:memory:`) | ✅ (H2 In-Memory) | ✅ (SQLite In-Memory) | ✅ (MemoryStateStore) | ✅ (MemoryStateStore) |
+| **PostgreSQL Durable Store** | ✅ | ✅ | ✅ | ✅ | Extensible `StateStore` |
+| **MongoDB Durable Store** | ✅ | ✅ | ✅ | ✅ | Extensible `StateStore` |
+| **Multi-Actor Monitoring & Cleanup Sweeps** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **5 Progressive Examples (`01`–`05`)** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Example 06 REST API Server** | Express | Spring Boot | ASP.NET Core | `net/http` | Axum |
+| **Postman v2.1 Collection (`{{orderId}}`)** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Request & Step/Hook Observability Logs** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Canonical Conformance Suite (6/6 Pass)** | 6 / 6 | 6 / 6 | 6 / 6 | 6 / 6 | 6 / 6 |
+
 

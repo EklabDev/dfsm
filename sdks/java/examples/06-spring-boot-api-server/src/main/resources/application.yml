@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: dfsm-spring-boot-api-server
+
+dfsm:
+  store: ${DFSM_STORE:h2}
+  postgres:
+    url: ${DFSM_POSTGRES_URL:jdbc:postgresql://localhost:55432/dfsm_test}
+    username: ${DFSM_POSTGRES_USER:dfsm}
+    password: ${DFSM_POSTGRES_PASSWORD:dfsm_password}
+  mongo:
+    uri: ${DFSM_MONGO_URI:mongodb://localhost:27018}
+    database: ${DFSM_MONGO_DB:dfsm_spring_api}
+
+logging:
+  level:
+    root: INFO
+    io.github.eklabdev.dfsm: INFO
+

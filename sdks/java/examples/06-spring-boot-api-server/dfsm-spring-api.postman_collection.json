@@ -1,0 +1,702 @@
+{
+  "info": {
+    "_postman_id": "d8f5c1a0-7b2e-4f91-9e12-6c40a8b31e06",
+    "name": "DFSM Spring Boot Order & Fulfillment API (eklabdev/dfsm)",
+    "description": "End-to-end Postman Collection for stepping through the DFSM Spring Boot REST API Server (`examples/06-spring-boot-api-server`).\n\n### Changing the Order ID (`{{orderId}}`)\nYou can change the active order ID in **any** of three ways:\n1. **Collection Variables tab**: Edit `orderId` (default `order-101`) — every `GET` and `POST /transitions` request automatically uses `{{orderId}}`.\n2. **Request Body of `01a. Create Order (Custom orderId)`**: Change `\"transactionId\"` in the JSON body; its Post-response script automatically updates `{{orderId}}` to match the created `transactionId`.\n3. **One-click Auto-Generator (`01b. Create Order — Auto-New orderId`)**: Its Pre-request script generates a fresh `order-<timestamp>` and stores it in `{{orderId}}` so you can re-run the entire workflow repeatedly without manual edits.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "order-101",
+      "type": "string"
+    },
+    {
+      "key": "customerEmail",
+      "value": "buyer@eklab.dev",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Happy Path — Step-by-Step Transitions (1-by-1)",
+      "description": "Walks a single `{{orderId}}` from `created` -> `inventory_reserved` -> parallel `fulfilling` (`packaging` + `shipping`) -> automatic `onDone` -> `delivered` (`COMPLETED`).",
+      "item": [
+        {
+          "name": "01a. Create Order (Uses / Updates {{orderId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created order transaction (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data && data.transactionId) {",
+                  "    pm.collectionVariables.set('orderId', data.transactionId);",
+                  "    console.log('Active {{orderId}} set to:', data.transactionId, '| currentState:', data.currentState, '| status:', data.status, '| availableEvents:', data.availableEvents);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"{{orderId}}\",\n  \"customerEmail\": \"{{customerEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Starts a new DFSM transaction using `{{orderId}}` (edit `orderId` in Collection Variables or type any custom `transactionId` directly in the body — the test script syncs `{{orderId}}` automatically)."
+          }
+        },
+        {
+          "name": "01b. Create Order (Auto-Generate Fresh {{orderId}})",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const freshId = 'order-' + Date.now();",
+                  "pm.collectionVariables.set('orderId', freshId);",
+                  "console.log('Generated fresh {{orderId}}:', freshId);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created fresh order transaction (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data && data.transactionId) {",
+                  "    pm.collectionVariables.set('orderId', data.transactionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"{{orderId}}\",\n  \"customerEmail\": \"{{customerEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Automatically generates a brand-new `order-<timestamp>` into `{{orderId}}` before sending, so all subsequent requests target the new order."
+          }
+        },
+        {
+          "name": "02. Get Current Order FSM Status (+ YAML)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            },
+            "description": "Fetches the current persisted FSM state, `status`, `availableEvents`, `context`, `compensationStack`, and `yaml` for `{{orderId}}`."
+          }
+        },
+        {
+          "name": "03. Step 1 — SUBMIT_ORDER (created -> inventory_reserved)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Moved to inventory_reserved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(data.currentState).to.eql('inventory_reserved');",
+                  "});",
+                  "console.log('Step 1 -> currentState:', data.currentState, '| status:', data.status, '| availableEvents:', data.availableEvents);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"SUBMIT_ORDER\",\n  \"input\": {\n    \"items\": [\n      {\n        \"sku\": \"MECH-KEY-01\",\n        \"quantity\": 2,\n        \"unitPriceCents\": 8500\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "04. Step 2 — AUTHORIZE_PAYMENT (enters parallel fulfilling)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Entered parallel fulfilling regions', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(data.currentState).to.have.property('fulfilling');",
+                  "});",
+                  "console.log('Step 2 -> currentState:', data.currentState, '| status:', data.status, '| availableEvents:', data.availableEvents);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"AUTHORIZE_PAYMENT\",\n  \"input\": {\n    \"paymentMethod\": \"visa_4242\",\n    \"simulateFailure\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "05. Step 3 — PACK_COMPLETE (packaging region -> packed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Packaging region is packed while shipping continues', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(data.currentState.fulfilling.packaging).to.eql('packed');",
+                  "});",
+                  "console.log('Step 3 -> currentState:', data.currentState, '| status:', data.status, '| availableEvents:', data.availableEvents);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"PACK_COMPLETE\",\n  \"input\": {\n    \"boxWeightKg\": 1.8\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "06. Step 4 — BOOK_CARRIER (completes parallel onDone -> delivered)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Parallel onDone fired -> delivered (COMPLETED)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(data.currentState).to.eql('delivered');",
+                  "    pm.expect(data.status).to.eql('COMPLETED');",
+                  "});",
+                  "console.log('Step 4 -> currentState:', data.currentState, '| status:', data.status, '| availableEvents:', data.availableEvents);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"BOOK_CARRIER\",\n  \"input\": {\n    \"carrier\": \"FedEx\",\n    \"trackingNumber\": \"FDX-778899\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Saga Compensation Rollback & Error Recovery",
+      "description": "Demonstrates `@Retry(3)` overriding YAML `retry: 2`, LIFO Saga compensation (`releaseInventory`), landing in custom `error` (`COMPENSATED`), and recovering via `RESET_ORDER`.",
+      "item": [
+        {
+          "name": "01. Create Saga Failure Test Order (Auto-Sets {{orderId}})",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('orderId', 'order-saga-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data && data.transactionId) {",
+                  "    pm.collectionVariables.set('orderId', data.transactionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"{{orderId}}\",\n  \"customerEmail\": \"ops@eklab.dev\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "02. SUBMIT_ORDER (Reserves Stock onto Saga Stack)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"SUBMIT_ORDER\",\n  \"input\": {\n    \"items\": [\n      {\n        \"sku\": \"GPU-90\",\n        \"quantity\": 1,\n        \"unitPriceCents\": 99900\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "03. AUTHORIZE_PAYMENT (Simulate Failure -> 3 Retries -> LIFO Rollback -> error)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Compensated in LIFO order and moved to error state', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(data.currentState).to.eql('error');",
+                  "    pm.expect(data.status).to.eql('COMPENSATED');",
+                  "    pm.expect(data.context.inventoryReserved).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"AUTHORIZE_PAYMENT\",\n  \"input\": {\n    \"paymentMethod\": \"declined_card\",\n    \"simulateFailure\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "04. RESET_ORDER (Recover from Custom Overridden error -> created)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Recovered back to created (IDLE)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(data.currentState).to.eql('created');",
+                  "    pm.expect(data.status).to.eql('IDLE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"RESET_ORDER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Validation & Guardrail Responses (400 / 409 / 404)",
+      "item": [
+        {
+          "name": "400 Bad Request — Zod Input Validation Failure (Empty Items)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"SUBMIT_ORDER\",\n  \"input\": {\n    \"items\": []\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "409 Conflict — Invalid Event for Current State (Shows availableEvents)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"PACK_COMPLETE\",\n  \"input\": {\n    \"boxWeightKg\": 1.0\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "404 Not Found — Unknown Order ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/non-existent-order-999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "non-existent-order-999999"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Machine YAML & Admin Control Plane",
+      "item": [
+        {
+          "name": "Inspect Machine Definition, Merged Policies & YAML",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/machine",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "machine"]
+            }
+          }
+        },
+        {
+          "name": "List Non-Terminal (Active) & In-Flight Orders + Terminal States",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Returns nonTerminalCount, activeOrders, and terminalStates', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(data).to.have.property('nonTerminalCount');",
+                  "    pm.expect(data).to.have.property('activeOrders');",
+                  "    pm.expect(data).to.have.property('terminalStates');",
+                  "});",
+                  "console.log('nonTerminalCount:', data.nonTerminalCount, '| topLevelTerminalStates:', data.terminalStates.topLevelTerminalStates);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Lists all instances NOT in a terminal state (`IDLE`, `IN_FLIGHT`, `COMPENSATING`), their `statusBreakdown`, and the machine's `terminalStates` (`delivered`, `cancelled`, `error`)."
+          }
+        },
+        {
+          "name": "Admin Status (Registry, Actors, Scheduler & Benchmarks)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "status"]
+            }
+          }
+        },
+        {
+          "name": "Trigger Stuck-Transaction Recovery Sweep",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sweep",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "sweep"]
+            }
+          }
+        },
+        {
+          "name": "Force Cleanup (Dry Run)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statuses\": [\"COMPLETED\", \"COMPENSATED\", \"FAILED\"],\n  \"dryRun\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cleanup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "cleanup"]
+            }
+          }
+        },
+        {
+          "name": "Force Cleanup (Delete Terminal Orders)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statuses\": [\"COMPLETED\", \"COMPENSATED\", \"FAILED\"],\n  \"action\": \"DELETE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cleanup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "cleanup"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Conditional Effect Router & Automatic Next Transition",
+      "description": "Demonstrates `@DfsmEffect` acting as an `if / else` router (`req.runEffect`) with direct `req.actor` access (`await req.actor.transition(...)`) so `SUBMIT_ORDER` with `autoApprovePayment: true` automatically chains straight from `created` -> `inventory_reserved` -> `fulfilling`!",
+      "item": [
+        {
+          "name": "01. Create Auto-Approve Order (Auto-Sets {{orderId}})",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('orderId', 'order-auto-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data && data.transactionId) {",
+                  "    pm.collectionVariables.set('orderId', data.transactionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"{{orderId}}\",\n  \"customerEmail\": \"vip@eklab.dev\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "02. SUBMIT_ORDER with autoApprovePayment=true (Auto-Transitions -> fulfilling!)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Auto-transitioned through inventory_reserved straight into parallel fulfilling!', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(data.currentState).to.have.property('fulfilling');",
+                  "    pm.expect(data.context.paymentAuthId).to.include('express_auto_wallet');",
+                  "});",
+                  "console.log('Auto-chained currentState:', data.currentState, '| availableEvents:', data.availableEvents);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"SUBMIT_ORDER\",\n  \"input\": {\n    \"autoApprovePayment\": true,\n    \"items\": [\n      {\n        \"sku\": \"VIP-BUNDLE\",\n        \"quantity\": 1,\n        \"unitPriceCents\": 25000\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+

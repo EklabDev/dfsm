@@ -32,6 +32,17 @@ vendor/
 **/target/
 Cargo.lock
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+*.whl
+*.tar.gz
+
 # Databases & Local Temp
 *.db
 *.db-shm

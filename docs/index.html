@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DFSM — Deterministic Finite State Machine | Polyglot Saga & Statecharts</title>
+  <meta name="description" content="Official documentation and verification audit report for DFSM (Deterministic Finite State Machine) across TypeScript, Java, C#, Go, Rust, and Python.">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+  <!-- Mermaid.js for architecture diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">DF</div>
+      <div class="brand-text">
+        <h1>DFSM</h1>
+        <span>v1.0.0 Polyglot</span>
+      </div>
+    </div>
+
+    <nav class="nav-group">
+      <div class="nav-title">Navigation</div>
+      <ul class="nav-links">
+        <li><a href="#overview" class="active">Overview & Architecture</a></li>
+        <li><a href="#polyglot-quickstart">Polyglot Quick Start</a></li>
+        <li><a href="#audit-report">Audit & Quality Scorecard</a></li>
+        <li><a href="#api-servers">REST API Servers & Postman</a></li>
+        <li><a href="#conformance">Conformance Suite</a></li>
+        <li><a href="#vscode-ext">VS Code Extension</a></li>
+        <li><a href="#packaging">Package & Publishing</a></li>
+      </ul>
+    </nav>
+
+    <nav class="nav-group">
+      <div class="nav-title">Language Packs</div>
+      <ul class="nav-links">
+        <li><a href="#polyglot-quickstart" onclick="document.querySelector('[data-tab=\'tab-ts\']').click()">TypeScript (Node.js)</a></li>
+        <li><a href="#polyglot-quickstart" onclick="document.querySelector('[data-tab=\'tab-java\']').click()">Java (Spring Boot)</a></li>
+        <li><a href="#polyglot-quickstart" onclick="document.querySelector('[data-tab=\'tab-csharp\']').click()">C# (.NET 9.0)</a></li>
+        <li><a href="#polyglot-quickstart" onclick="document.querySelector('[data-tab=\'tab-go\']').click()">Go (net/http)</a></li>
+        <li><a href="#polyglot-quickstart" onclick="document.querySelector('[data-tab=\'tab-rust\']').click()">Rust (Axum)</a></li>
+        <li><a href="#polyglot-quickstart" onclick="document.querySelector('[data-tab=\'tab-py\']').click()">Python (FastAPI)</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper">
+    <header class="top-header">
+      <div class="header-search">
+        <input type="text" id="doc-search" placeholder="Search documentation, APIs, tests...">
+      </div>
+      <div class="header-actions">
+        <button id="theme-toggle" class="btn-icon">☀️ Light</button>
+        <a href="https://github.com/eklabdev/dfsm" target="_blank" class="btn-icon">
+          <span>GitHub</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="content-container">
+      
+      <!-- Hero Section -->
+      <section id="overview" class="hero">
+        <div class="badge-polyglot">✨ 100% Polyglot Parity Across 6 Languages</div>
+        <h2>Deterministic Finite State Machine <span class="hero-gradient">(DFSM)</span></h2>
+        <p>
+          Enterprise-grade distributed statechart orchestration engine featuring LIFO Saga compensation rollback, 
+          4-layer policy precedence merging, circuit breaker resilience, and strict Draft 2020-12 JSON Schema validation.
+        </p>
+
+        <div class="hero-stats">
+          <div class="stat-card">
+            <div class="stat-number">6 / 6</div>
+            <div class="stat-label">Runtimes Verified</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">156</div>
+            <div class="stat-label">Automated Tests Passed (0 Failures)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">36 / 36</div>
+            <div class="stat-label">Conformance Scenarios Passed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">6</div>
+            <div class="stat-label">REST API Servers & Postman Collections</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Architecture Diagram Section -->
+      <section id="architecture">
+        <h3>🏗️ System Architecture & Orchestration Flow</h3>
+        <p>
+          DFSM coordinates state transitions deterministically across distributed processes. If an error occurs in any step, 
+          the engine automatically activates the <strong>LIFO Saga compensation unwind</strong>, reversing previous operations in exact inverse order:
+        </p>
+
+        <div class="diagram-box">
+          <pre class="mermaid">
+flowchart TD
+    Created["1. State: created"] -->|"SUBMIT_ORDER [reserveInventory]"| Reserved["2. State: inventory_reserved\n(Pushes releaseInventory to Saga Stack)"]
+    Reserved -->|"AUTHORIZE_PAYMENT [authorizePayment]"| Fulfilling["3. State: fulfilling (Parallel)\n(Pushes refundPayment to Saga Stack)"]
+    
+    subgraph Parallel Fulfillment
+        Fulfilling --> Packaging["packaging: packing -> packed"]
+        Fulfilling --> Shipping["shipping: booking_carrier -> carrier_booked"]
+    end
+
+    Packaging & Shipping -->|"Automatic onDone"| Delivered["4. State: delivered (COMPLETED)"]
+
+    Reserved -.->|"Payment Fails / Max Retries"| Error["Error State (Rollback Initiated)"]
+    Error -.->|"LIFO Step 1"| Rel["Unwind: releaseInventory"]
+    Rel -.-> Compensated["Status: COMPENSATED"]
+    Compensated -->|"RESET_ORDER"| Created
+          </pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h4>🔄 4-Layer Policy Precedence Pipeline</h4>
+            <p>
+              Policies merge across four hierarchical layers: 
+              <code>Code Decorator/Annotation &gt; Transition YAML &gt; Machine Defaults &gt; Global Registry</code>.
+              Retries feature non-multiplying backoff (Fixed, Linear, Exponential) with jitter.
+            </p>
+          </div>
+          <div class="card">
+            <h4>🛡️ Resilient Circuit Breakers</h4>
+            <p>
+              Each handler maintains a sliding-window failure monitor transitioning between 
+              <code>CLOSED</code>, <code>OPEN</code>, and <code>HALF-OPEN</code> states to protect downstream systems.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Polyglot Quickstart Section -->
+      <section id="polyglot-quickstart">
+        <h3>🚀 Polyglot Quick Start (How-To)</h3>
+        <p>Select your language of choice to view idiomatic DFSM code examples:</p>
+
+        <div class="tabs-container">
+          <div class="tabs-header">
+            <button class="tab-btn active" data-tab="tab-ts">TypeScript</button>
+            <button class="tab-btn" data-tab="tab-java">Java</button>
+            <button class="tab-btn" data-tab="tab-csharp">C# (.NET)</button>
+            <button class="tab-btn" data-tab="tab-go">Go</button>
+            <button class="tab-btn" data-tab="tab-rust">Rust</button>
+            <button class="tab-btn" data-tab="tab-py">Python</button>
+          </div>
+
+          <!-- TypeScript Tab -->
+          <div class="tab-pane active" data-tab="tab-ts">
+            <button class="copy-btn">Copy</button>
+            <pre><code class="language-typescript">import { DfsmActor, parseYamlMachine, FSMRegistry } from "@eklabdev/dfsm";
+
+interface OrderContext {
+  orderId: string;
+  amount: number;
+}
+
+const yaml = `
+dfsm: "1.0"
+id: order-machine
+version: "1.0.0"
+initial: draft
+states:
+  draft:
+    on:
+      SUBMIT: processing
+  processing:
+    on:
+      COMPLETE: fulfilled
+  fulfilled:
+    type: final
+`;
+
+const machine = parseYamlMachine(yaml);
+const actor = new DfsmActor&lt;OrderContext&gt;(machine);
+
+// Start instance
+await actor.start("order-101", { orderId: "order-101", amount: 150.0 });
+
+// Transition 1: draft -> processing
+const res1 = await actor.transition("order-101", "SUBMIT");
+console.log(`Current state: ${res1.currentState} | Status: ${res1.status}`);
+
+// Transition 2: processing -> fulfilled (Final state!)
+const res2 = await actor.transition("order-101", "COMPLETE");
+console.log(`Final state: ${res2.currentState} | Status: ${res2.status}`);</code></pre>
+          </div>
+
+          <!-- Java Tab -->
+          <div class="tab-pane" data-tab="tab-java">
+            <button class="copy-btn">Copy</button>
+            <pre><code class="language-java">import io.github.eklabdev.dfsm.actor.DfsmActor;
+import io.github.eklabdev.dfsm.definition.MachineDefinition;
+import io.github.eklabdev.dfsm.definition.YamlParser;
+import io.github.eklabdev.dfsm.registry.FSMRegistry;
+
+public class Main {
+    public record OrderContext(String orderId, double amount) {}
+
+    public static void main(String[] args) throws Exception {
+        String yaml = """
+            dfsm: "1.0"
+            id: order-machine
+            version: "1.0.0"
+            initial: draft
+            states:
+              draft:
+                on:
+                  SUBMIT: processing
+              processing:
+                on:
+                  COMPLETE: fulfilled
+              fulfilled:
+                type: final
+            """;
+
+        MachineDefinition machine = YamlParser.parse(yaml);
+        DfsmActor&lt;OrderContext&gt; actor = new DfsmActor&lt;&gt;(machine, new FSMRegistry());
+
+        actor.start("order-101", new OrderContext("order-101", 150.0)).get();
+        var res = actor.transition("order-101", "SUBMIT").get();
+        System.out.println("Current state: " + res.currentState() + " | Status: " + res.status());
+    }
+}</code></pre>
+          </div>
+
+          <!-- C# Tab -->
+          <div class="tab-pane" data-tab="tab-csharp">
+            <button class="copy-btn">Copy</button>
+            <pre><code class="language-csharp">using EKLabDev.Dfsm.Actor;
+using EKLabDev.Dfsm.Definition;
+using EKLabDev.Dfsm.Registry;
+
+public record OrderContext(string OrderId, decimal Amount);
+
+class Program {
+    static async Task Main() {
+        var yaml = @"
+dfsm: '1.0'
+id: order-machine
+version: '1.0.0'
+initial: draft
+states:
+  draft:
+    on:
+      SUBMIT: processing
+  processing:
+    on:
+      COMPLETE: fulfilled
+  fulfilled:
+    type: final
+";
+        var machine = YamlParser.Parse(yaml);
+        var actor = new DfsmActor&lt;OrderContext&gt;(machine, new FSMRegistry());
+
+        await actor.StartAsync("order-101", new OrderContext("order-101", 150.0m));
+        var res = await actor.TransitionAsync("order-101", "SUBMIT");
+        Console.WriteLine($"Current State: {res.CurrentState} | Status: {res.Status}");
+    }
+}</code></pre>
+          </div>
+
+          <!-- Go Tab -->
+          <div class="tab-pane" data-tab="tab-go">
+            <button class="copy-btn">Copy</button>
+            <pre><code class="language-go">package main
+
+import (
+	"context"
+	"fmt"
+	"github.com/eklabdev/dfsm/sdks/go"
+)
+
+type OrderContext struct {
+	OrderId string  `json:"orderId"`
+	Amount  float64 `json:"amount"`
+}
+
+func main() {
+	yamlDef := `
+dfsm: "1.0"
+id: order-machine
+version: "1.0.0"
+initial: draft
+states:
+  draft:
+    on:
+      SUBMIT: processing
+  processing:
+    on:
+      COMPLETE: fulfilled
+  fulfilled:
+    type: final
+`
+	machine, _ := dfsm.ParseYamlMachine(yamlDef)
+	reg := dfsm.NewFSMRegistry()
+	actor := dfsm.NewDfsmActor[OrderContext](machine, reg)
+
+	ctx := context.Background()
+	actor.Start(ctx, "order-101", &OrderContext{OrderId: "order-101", Amount: 150.0})
+
+	res, _ := actor.Transition(ctx, "order-101", "SUBMIT", nil)
+	fmt.Printf("Current state: %s | Status: %s\n", res.CurrentState, res.Status)
+}</code></pre>
+          </div>
+
+          <!-- Rust Tab -->
+          <div class="tab-pane" data-tab="tab-rust">
+            <button class="copy-btn">Copy</button>
+            <pre><code class="language-rust">use eklabdev_dfsm::actor::DfsmActor;
+use eklabdev_dfsm::definition::parse_yaml_machine;
+use eklabdev_dfsm::registry::FSMRegistry;
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+struct OrderContext {
+    order_id: String,
+    amount: f64,
+}
+
+#[tokio::main]
+async fn main() -> Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let yaml = r#"
+dfsm: "1.0"
+id: order-machine
+version: "1.0.0"
+initial: draft
+states:
+  draft:
+    on:
+      SUBMIT: processing
+  processing:
+    on:
+      COMPLETE: fulfilled
+  fulfilled:
+    type: final
+"#;
+    let machine = parse_yaml_machine(yaml)?;
+    let actor = DfsmActor::&lt;OrderContext&gt;::new(machine, Arc::new(FSMRegistry::new()));
+
+    actor.start("order-101", OrderContext { order_id: "order-101".into(), amount: 150.0 }).await?;
+    let res = actor.transition("order-101", "SUBMIT", None).await?;
+    println!("Current state: {:?} | Status: {:?}", res.current_state, res.status);
+    Ok(())
+}</code></pre>
+          </div>
+
+          <!-- Python Tab -->
+          <div class="tab-pane" data-tab="tab-py">
+            <button class="copy-btn">Copy</button>
+            <pre><code class="language-python">import asyncio
+from pydantic import BaseModel
+from dfsm import DfsmActor, parse_yaml_machine
+
+class OrderContext(BaseModel):
+    order_id: str = ""
+    amount: float = 0.0
+
+async def main():
+    yaml_str = """
+dfsm: "1.0"
+id: order-machine
+version: "1.0.0"
+initial: draft
+states:
+  draft:
+    on:
+      SUBMIT: processing
+  processing:
+    on:
+      COMPLETE: fulfilled
+  fulfilled:
+    type: final
+"""
+    machine = parse_yaml_machine(yaml_str)
+    actor = DfsmActor[OrderContext](machine, context_type=OrderContext)
+
+    await actor.start("order-101", OrderContext(order_id="order-101", amount=150.0))
+    res = await actor.transition("order-101", "SUBMIT")
+    print(f"Current state: {res.current_state} | Status: {res.status.value}")
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Audit Report Section -->
+      <section id="audit-report">
+        <h3>📊 Comprehensive Quality & Verification Audit Report</h3>
+        <p>Summary of automated test results, test coverage, and verification checks across all six language packs:</p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Language / Target</th>
+                <th>Test Framework</th>
+                <th>Suites / Files</th>
+                <th>Tests Run</th>
+                <th>Pass Rate</th>
+                <th>Duration</th>
+                <th>Verification Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>TypeScript (Node.js)</strong></td>
+                <td>Vitest v3.2.7</td>
+                <td>10 Files</td>
+                <td>37 Tests</td>
+                <td><span class="pill-pass">100% Pass</span></td>
+                <td>1.32s</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Java (Spring Boot)</strong></td>
+                <td>JUnit 5 / Surefire</td>
+                <td>10 Suites</td>
+                <td>33 Tests</td>
+                <td><span class="pill-pass">100% Pass</span></td>
+                <td>5.96s</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>C# (.NET 9.0)</strong></td>
+                <td>xUnit / VSTest</td>
+                <td>2 Assemblies</td>
+                <td>20 Tests</td>
+                <td><span class="pill-pass">100% Pass</span></td>
+                <td>0.56s</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Go (1.22+)</strong></td>
+                <td>testing (`go test`)</td>
+                <td>9 Packages</td>
+                <td>15 Tests</td>
+                <td><span class="pill-pass">100% Pass</span></td>
+                <td>0.39s</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Rust (1.78+)</strong></td>
+                <td>cargo test</td>
+                <td>3 Suites</td>
+                <td>11 Tests</td>
+                <td><span class="pill-pass">100% Pass</span></td>
+                <td>0.14s</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Python (3.10+)</strong></td>
+                <td>pytest / pytest-asyncio</td>
+                <td>3 Suites</td>
+                <td>11 Tests</td>
+                <td><span class="pill-pass">100% Pass</span></td>
+                <td>0.59s</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>VS Code Extension</strong></td>
+                <td>Vitest v3.2.7</td>
+                <td>4 Files</td>
+                <td>29 Tests</td>
+                <td><span class="pill-pass">100% Pass</span></td>
+                <td>0.55s</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Total Project Score</strong></td>
+                <td>—</td>
+                <td><strong>41 Suites</strong></td>
+                <td><strong>156 Tests</strong></td>
+                <td><span class="pill-pass">100% Passed</span></td>
+                <td>—</td>
+                <td><span class="pill-pass">PASSED</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- REST API Servers Section -->
+      <section id="api-servers">
+        <h3>🌐 Example 06 REST API Servers & Postman Collections</h3>
+        <p>
+          Each SDK includes a complete REST API server implementing <code>order-fulfillment.dfsm.yaml</code>, structured request/step/response logging, and a Postman v2.1 collection:
+        </p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>SDK</th>
+                <th>Framework</th>
+                <th>Port</th>
+                <th>Postman Collection File</th>
+                <th>Dynamic <code>{{orderId}}</code></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TypeScript</td>
+                <td>Express</td>
+                <td>3000</td>
+                <td><code>dfsm-express-api.postman_collection.json</code></td>
+                <td><span class="pill-pass">Supported</span></td>
+              </tr>
+              <tr>
+                <td>Java</td>
+                <td>Spring Boot 3.3.5</td>
+                <td>8080</td>
+                <td><code>dfsm-spring-boot-api.postman_collection.json</code></td>
+                <td><span class="pill-pass">Supported</span></td>
+              </tr>
+              <tr>
+                <td>C#</td>
+                <td>ASP.NET Core (.NET 9.0)</td>
+                <td>5000</td>
+                <td><code>dfsm-csharp-api.postman_collection.json</code></td>
+                <td><span class="pill-pass">Supported</span></td>
+              </tr>
+              <tr>
+                <td>Go</td>
+                <td>net/http</td>
+                <td>8080</td>
+                <td><code>dfsm-go-api.postman_collection.json</code></td>
+                <td><span class="pill-pass">Supported</span></td>
+              </tr>
+              <tr>
+                <td>Rust</td>
+                <td>Axum / Tokio</td>
+                <td>3000</td>
+                <td><code>dfsm-rust-api.postman_collection.json</code></td>
+                <td><span class="pill-pass">Supported</span></td>
+              </tr>
+              <tr>
+                <td>Python</td>
+                <td>FastAPI / Uvicorn</td>
+                <td>8000</td>
+                <td><code>dfsm-python-api.postman_collection.json</code></td>
+                <td><span class="pill-pass">Supported</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Conformance Suite Section -->
+      <section id="conformance">
+        <h3>🎯 Canonical Conformance Suite (6 Scenarios)</h3>
+        <p>Every language pack runner passes the exact same 6 canonical scenarios:</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h4>1. Atomic Cycle & Default Error</h4>
+            <p>Cycles <code>red -&gt; green -&gt; yellow</code> and routes unhandled exceptions to implicit default <code>error</code> state.</p>
+          </div>
+          <div class="card">
+            <h4>2. Hierarchical Bubbling Cancel</h4>
+            <p>Enters child state <code>active.authorizing</code> and cleanly bubbles parent event <code>CANCEL</code> to <code>cancelled</code>.</p>
+          </div>
+          <div class="card">
+            <h4>3. Hierarchical onDone Cascade</h4>
+            <p>Child reaching final state <code>captured</code> triggers parent's <code>onDone</code> directly to <code>settled</code>.</p>
+          </div>
+          <div class="card">
+            <h4>4. Parallel Regions Joint onDone</h4>
+            <p>Orthogonal regions advance concurrently; joint <code>onDone</code> triggers only when all regions reach final.</p>
+          </div>
+          <div class="card">
+            <h4>5. 4-Layer Precedence Pipeline</h4>
+            <p>Code decorator/annotation (retry=4) overrides YAML (retry=3), inheriting circuit breaker; routes to fallback.</p>
+          </div>
+          <div class="card">
+            <h4>6. LIFO Saga Compensation Rollback</h4>
+            <p>Unwinds recorded compensation steps in reverse order (Hotel then Flight) into <code>COMPENSATED</code> state.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Packaging Section -->
+      <section id="packaging">
+        <h3>📦 Build & Package Verification</h3>
+        <p>Every SDK and tool builds cleanly using native ecosystem package commands:</p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Artifact</th>
+                <th>Packaging Tool</th>
+                <th>Generated Output</th>
+                <th>Verification</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TypeScript</td>
+                <td><code>npm pack --dry-run</code></td>
+                <td><code>eklabdev-dfsm-1.0.0.tgz</code> (248.9 kB, 9 files)</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td>Java</td>
+                <td><code>./mvnw package</code></td>
+                <td><code>target/dfsm-core-1.0.0.jar</code></td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td>C#</td>
+                <td><code>dotnet pack</code></td>
+                <td><code>bin/Release/EKLabDev.Dfsm.1.0.0.nupkg</code></td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td>Go</td>
+                <td><code>go build ./...</code></td>
+                <td>Go module compilation validated</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td>Rust</td>
+                <td><code>cargo package --allow-dirty</code></td>
+                <td><code>target/package/eklabdev-dfsm-1.0.0.crate</code> (44.1 kB)</td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td>Python</td>
+                <td><code>python -m build</code></td>
+                <td><code>eklabdev_dfsm-1.0.0.tar.gz</code> + <code>.whl</code></td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td>VS Code</td>
+                <td><code>vsce package</code></td>
+                <td><code>tools/vscode-dfsm/vscode-dfsm-1.0.0.vsix</code></td>
+                <td><span class="pill-pass">VERIFIED</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- VS Code Extension Section -->
+      <section id="vscode-ext">
+        <h3>🧩 Visual Studio Code Extension</h3>
+        <p>
+          The official VS Code extension (<code>tools/vscode-dfsm</code>) provides instant real-time visualization and editing support:
+        </p>
+        <div class="grid-2">
+          <div class="card">
+            <h4>👁️ Real-Time Statechart Visualizer</h4>
+            <p>Interactive Mermaid rendering in a side webview pane with click-to-highlight state navigation.</p>
+          </div>
+          <div class="card">
+            <h4>🔍 Draft 2020-12 Schema Diagnostics</h4>
+            <p>Instant syntax checking, unknown state target warnings, and namespace qualification validation.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+</body>
+</html>
+

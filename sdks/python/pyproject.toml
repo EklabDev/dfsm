@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eklabdev-dfsm"
+version = "1.0.0"
+description = "Deterministic Finite State Machine (DFSM) with Saga Orchestration and Resilient Policies"
+readme = "README.md"
+authors = [
+    { name = "EKLab Dev Team", email = "dev@eklab.dev" }
+]
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+    "jsonschema>=4.20.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",
+]
+api = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dfsm = ["schemas/*.json"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]

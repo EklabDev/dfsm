@@ -1,0 +1,476 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "DFSM Python FastAPI Order & Fulfillment API (eklabdev-dfsm)",
+    "description": "End-to-end Postman Collection for stepping through the DFSM Python FastAPI REST API Server (`examples/06-fastapi-api-server`).\n\n### Changing the Order ID (`{{orderId}}`)\nYou can change the active order ID in **any** of three ways:\n1. **Collection Variables tab**: Edit `orderId` (default `order-py-101`) — every request automatically uses `{{orderId}}`.\n2. **Request Body of `01a. Create Order`**: Change `\"orderId\"` in JSON; Post-response script updates `{{orderId}}` to match.\n3. **One-click Auto-Generator (`01b. Create Order — Auto-New orderId`)**: Generates a fresh `order-<timestamp>` and stores it in `{{orderId}}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "order-py-101",
+      "type": "string"
+    },
+    {
+      "key": "customerEmail",
+      "value": "buyer@eklab.dev",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Happy Path — Step-by-Step Transitions (1-by-1)",
+      "description": "Walks a single `{{orderId}}` through `created` -> `inventory_reserved` -> parallel `fulfilling` -> automatic `onDone` -> `delivered` (`COMPLETED`).",
+      "item": [
+        {
+          "name": "00. Get Machine Definition & YAML",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/machine",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "machine"]
+            }
+          }
+        },
+        {
+          "name": "01a. Create Order (Uses / Updates {{orderId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created order transaction (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data && data.order_id) {",
+                  "    pm.collectionVariables.set('orderId', data.order_id);",
+                  "    console.log('Active {{orderId}} set to:', data.order_id, '| currentState:', data.current_state, '| status:', data.status, '| availableEvents:', data.available_events);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"customer\": \"{{customerEmail}}\",\n  \"amount\": 150.0,\n  \"autoAuthorize\": false,\n  \"simulateFailure\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "01b. Create Order (Auto-New orderId)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const newId = 'order-py-' + Date.now();",
+                  "pm.collectionVariables.set('orderId', newId);",
+                  "console.log('Generated fresh orderId:', newId);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created order transaction (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data && data.order_id) {",
+                  "    pm.collectionVariables.set('orderId', data.order_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"customer\": \"{{customerEmail}}\",\n  \"amount\": 150.0,\n  \"autoAuthorize\": false,\n  \"simulateFailure\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "02. Submit Order (SUBMIT_ORDER)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"SUBMIT_ORDER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "03. Authorize Payment (AUTHORIZE_PAYMENT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"AUTHORIZE_PAYMENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "04. Complete Packing (PACK_COMPLETE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"PACK_COMPLETE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "05. Book Carrier (BOOK_CARRIER -> onDone -> delivered)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"BOOK_CARRIER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "06. Inspect Order State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Saga Compensation Rollback & Error Recovery",
+      "description": "Demonstrates automatic LIFO Saga compensation unwind when a step fails after retries.",
+      "item": [
+        {
+          "name": "01. Create Order Configured to Fail Payment",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const failId = 'order-fail-' + Date.now();",
+                  "pm.collectionVariables.set('orderId', failId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"customer\": \"fail@eklab.dev\",\n  \"amount\": 250.0,\n  \"autoAuthorize\": false,\n  \"simulateFailure\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "02. Reserve Inventory (Pushes Compensation Step)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"SUBMIT_ORDER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "03. Authorize Payment (Fails -> 3 Retries -> Unwinds releaseInventory)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"AUTHORIZE_PAYMENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        },
+        {
+          "name": "04. Reset Order from Error Back to Created",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "reset"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Validation & Guardrail Responses (422 / 404 / 409)",
+      "description": "Verifies robust API error reporting for malformed JSON, invalid transitions, and missing orders.",
+      "item": [
+        {
+          "name": "01. Reject Invalid Email (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"order-bad-email\",\n  \"customer\": \"not-a-valid-email\",\n  \"amount\": 100.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "02. Reject Non-Positive Amount (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"order-bad-amt\",\n  \"customer\": \"buyer@eklab.dev\",\n  \"amount\": -20.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "03. Non-Existent Order (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/order-non-existent-9999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "order-non-existent-9999"]
+            }
+          }
+        },
+        {
+          "name": "04. Invalid Transition Event (409 Conflict)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"INVALID_EVENT_FROM_CURRENT_STATE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/transitions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "transitions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Machine YAML & Admin Control Plane",
+      "description": "Inspect machine definitions, query in-flight transactions, check scheduler status, and sweep stuck transactions.",
+      "item": [
+        {
+          "name": "01. List In-Flight & Non-Terminal Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/in-flight",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "in-flight"]
+            }
+          }
+        },
+        {
+          "name": "02. List Terminal States",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/terminals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "terminals"]
+            }
+          }
+        },
+        {
+          "name": "03. Query Scheduler Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduler",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scheduler"]
+            }
+          }
+        },
+        {
+          "name": "04. Sweep Stuck Transactions",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduler/sweep",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scheduler", "sweep"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Cancel Order",
+      "description": "Cancel an order before fulfillment.",
+      "item": [
+        {
+          "name": "01. Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{orderId}}", "cancel"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+
